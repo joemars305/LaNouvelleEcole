@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "522397725283",
+    "firebase_url": "https://la-nouvelle-ecole-7e29b.firebaseio.com",
+    "project_id": "la-nouvelle-ecole-7e29b",
+    "storage_bucket": "la-nouvelle-ecole-7e29b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522397725283:android:2fea493e6942f93a84be56",
+        "android_client_info": {
+          "package_name": "io.fireship.lanouvelleecole"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "522397725283-lgulv4v0jk0h07g6nf77n6l8jec3eqvu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.fireship.lanouvelleecole",
+            "certificate_hash": "8879e8bcf5318f9a64b0b15e6c6d7a25fc9d20eb"
+          }
+        },
+        {
+          "client_id": "522397725283-teh08o31ril79n92ao96m9ihcgprk4e5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQzX0va_UQPjjSbGaEiMNYcNGeJgdeyCI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "522397725283-teh08o31ril79n92ao96m9ihcgprk4e5.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "522397725283-g2bqgpavn88pi2qohhjgik54kmjkc5v2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "io.fireship.lanouvelleecole"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
