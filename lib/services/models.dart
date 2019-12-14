@@ -123,15 +123,22 @@ class Report {
 class BabyLesson {
   String name;
   String createdBy;
+  String creationDate;
+  String category;
   String id;
-  
-  BabyLesson({ this.name, this.createdBy, this.id });
+  List<Step> steps;
+
+  BabyLesson({ this.name, this.createdBy, this.creationDate, this.category, this.id, this.steps });
+
 
   factory BabyLesson.fromMap(Map data) {
-    
     return BabyLesson(
       name: data['name'],
       createdBy: data['createdBy'],
+      creationDate: data['creationDate'],
+      category: data['category'],
+      id: data['id'],
+      steps: (data['steps'] as List ?? []).map((v) => Step.fromMap(v)).toList(),
     );
   }
 
@@ -139,7 +146,42 @@ class BabyLesson {
     return {
       'name': name ?? '',
       'createdBy': createdBy ?? '',
+      'creationDate': creationDate ?? '',
+      'category': category ?? '',
       'id': id ?? '',
+      'steps': (steps ?? []).map((v) => v.toMap()).toList(),
     };
   }
+}
+
+
+class Step {
+  
+
+  Step({  });
+
+
+  factory BabyLesson.fromMap(Map data) {
+    return BabyLesson(
+      audioPath: data['audioPath'],
+      photoPath: data['photoPath'],
+      
+    );
+  }
+
+  Map toMap() {
+    return {
+      'name': name ?? '',
+      'createdBy': createdBy ?? '',
+    };
+  }
+}
+
+// Contient entre autres, le Report utilisateur
+// que l'on souhaite passer d'un écran à l'autre
+class ScreenArguments {
+  final Report userReport;
+  final int index;
+
+  ScreenArguments(this.userReport, this.index);
 }

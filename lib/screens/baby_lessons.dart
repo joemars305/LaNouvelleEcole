@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:quizapp/screens/screens.dart';
 import '../services/services.dart';
 import '../shared/shared.dart';
 
@@ -16,7 +17,8 @@ class BabyLessonsScreen extends StatelessWidget {
            * redirige vers l'écran de création de bébé leçon */
           IconButton(
             icon: Icon(FontAwesomeIcons.plus, color: Colors.green[200]),
-            onPressed: () => Navigator.pushNamed(context, '/create_fetus_lesson'),
+            onPressed: () =>
+                Navigator.pushNamed(context, '/create_fetus_lesson'),
           )
         ],
       ),
@@ -42,7 +44,9 @@ class BabyLessonsScreen extends StatelessWidget {
 
               /** s'affiche lorsque les données sont en cours de chargement */
               case ConnectionState.waiting:
-                return Text('Chargement...');
+                return Center(
+                  child: Text('Chargement...'),
+                );
 
               /** s'affiche lorsque les données sont chargées */
               default:
@@ -58,8 +62,9 @@ class BabyLessonsScreen extends StatelessWidget {
 
                 /** Si l'utilisateur à crée au moins 1 bébé leçon... */
                 if (babyLessons.length > 0) {
-                  return Text(userData.uid);
-                } 
+                  /** affiche un liste des bébé leçons */
+                  return babyLessonsList(userData);
+                }
                 /** si l'utilisateur n'a pas crée de bébé leçons... */
                 else {
                   /** affiche un message invitant l'utilisateur
@@ -90,35 +95,95 @@ class BabyLessonsScreen extends StatelessWidget {
   }
 
   // la liste de bébé leçons a l'écran
-  ListView _babyLessonsList(snapshot) {
+  ListView babyLessonsList(Report userReport) {
     return new ListView.builder(
-      itemCount: snapshot.data.documents.length,
+      itemCount: userReport.babyLessons.length,
+      // crée une liste de bébé leçons
+      // qu'on peut supprimer en swipant
       itemBuilder: (context, index) {
-        return new BabyLessonItem(snapshot.data.documents[index]);
+        return Dismissible(
+          onDismissed: (DismissDirection direction) {
+            // une fois swipé, on supprime le bébé leçon
+            // situé à la position 'index', dans la liste de bébé leçons
+            // de l'utilisateur
+            userReport.babyLessons.removeAt(index);
+
+            // puis on met à jour le Report
+            Global.reportRef.upsert(userReport.toMap());
+          },
+          background: Container(
+            child: Center(
+              child: Text(
+                'Bébé leçon supprimé',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            color: Colors.blueAccent,
+          ),
+          child: BabyLessonCard(userReport: userReport, index: index),
+          key: UniqueKey(),
+          direction: DismissDirection.horizontal,
+        );
       },
     );
   }
 }
 
-// le layout d'un bébé leçon individuel à l'écran
-class BabyLessonItem extends StatelessWidget {
-  const BabyLessonItem(this.babyLesson);
+/** le layout d'un bébé leçon individuel 
+ * dans la liste de bébé leçons */
+class BabyLessonCard extends StatelessWidget {
+  // les données utilisateur
+  final Report userReport;
 
-  final babyLesson;
+  // la position du bébé leçon dans la liste de bébé leçons
+  final int index;
+
+  // le bébé leçon of interest
+  BabyLesson babyLesson;
+
+  BabyLessonCard({this.userReport, this.index});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          babyLesson['name'],
+    // grab the bébé leçon by the umbilical cord
+    babyLesson = userReport.babyLessons[index];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(5.0, 0.0, 5.0, 0.0),
+      child: Card(
+        child: ListTile(
+          leading: CircleAvatar(
+            child: Image.asset("assets/covers/baby.png"),
+          ),
+          // le nom de la leçon
+          title: Text(babyLesson.name,
+              style: Theme.of(context).textTheme.headline),
+          // les informations a propos de cette leçon
+          // (le nom du créateur de cette leçon, la date de création, la catégorie de la leçon)
+          subtitle: Text(
+              "Crée par " +
+                  babyLesson.createdBy +
+                  "\n"
+                      "Le " +
+                  babyLesson.creationDate +
+                  "\n" +
+                  "Categorie: " +
+                  babyLesson.category,
+              style: Theme.of(context).textTheme.subhead),
+          // lorsque qu'on clique sur cette leçon
+          // on va vers l'écran de création d'étapes
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              StepCreation.routeName,
+              arguments: ScreenArguments(
+                userReport,
+                index,
+              ),
+            );
+          },
         ),
-        const SizedBox(height: 8.0),
-        Text(
-          babyLesson['created_by'],
-        ),
-      ],
+      ),
     );
   }
 }

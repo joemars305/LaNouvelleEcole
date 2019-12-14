@@ -35,6 +35,7 @@ class MyApp extends StatelessWidget {
           '/profile': (context) => ProfileScreen(),
           '/favorites': (context) => FavoritesScreen(),
           '/create_fetus_lesson': (context) => CreateFetusPage(),
+          StepCreation.routeName: (context) => StepCreation(),
         },
 
         // Theme

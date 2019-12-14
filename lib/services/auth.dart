@@ -64,7 +64,7 @@ class AuthService {
     FirebaseUser user = await _auth.signInAnonymously();
     
     // écrit dans la base de donnée firebase
-    // une entry représentant cet user
+    //  une entry représentant cet user
     updateUserData(user);
     return user;
   }

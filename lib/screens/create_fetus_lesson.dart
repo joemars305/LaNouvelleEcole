@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/services.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+
 
 
 const nommeTonFetus = "Détails sur le bébé";
@@ -193,10 +195,20 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
       // le dossier Report de cet utilisateur
       Report userReport = await Global.reportRef.getDocument();
       
+      // la date de naissance du bébé leçon
+      DateTime now = DateTime.now();
+      String formattedDate = DateFormat('dd-MM-yyyy').format(now);
+      
+      
       // un bébé leçon fraichement crée
       // sous forme d'objet
       // (voir models.dart pour plus de détails sur BabyLesson)
-      BabyLesson newLesson = new BabyLesson(name: _name, createdBy: user.displayName);
+      BabyLesson newLesson = new BabyLesson(
+        name: _name, 
+        createdBy: user.displayName,
+        creationDate: formattedDate,
+        category: currentCategory
+      );
 
       // ajoute ce bébé leçon dans la liste
       // de bébé leçons du Report de l'utilisateur
