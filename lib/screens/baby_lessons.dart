@@ -1,16 +1,24 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:quizapp/screens/screens.dart';
 import '../services/services.dart';
 import '../shared/shared.dart';
 
-//  l'écran affichant toutes les leçons en cours de création
+// l'écran affichant toutes les
+// leçons en cours de création
 class BabyLessonsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bébé Leçons'),
+        title: Text(
+          'Bébé Leçons',
+          style: TextStyle(
+            //fontFamily: 'ComingSoon',
+          ),
+        ),
         backgroundColor: Colors.blue,
         actions: [
           /** le bouton en forme de + qui nous 
@@ -34,18 +42,34 @@ class BabyLessonsScreen extends StatelessWidget {
              * récup du document utilisateur,
              * affiche l'erreur */
             if (snapshot.hasError) {
-              return Text('Erreur: ${snapshot.error}');
+              return Text(
+                'Erreur: ${snapshot.error}',
+                style: TextStyle(
+                  //fontFamily: 'ComingSoon',
+                ),
+              );
             }
 
             switch (snapshot.connectionState) {
               /** si stream: null, ce message s'affiche */
               case ConnectionState.none:
-                return Text('Aucune données en attente...');
+                return Center(
+                    child: Text(
+                  'Aucune données en attente...',
+                  style: TextStyle(
+                    //fontFamily: 'ComingSoon',
+                  ),
+                ));
 
               /** s'affiche lorsque les données sont en cours de chargement */
               case ConnectionState.waiting:
                 return Center(
-                  child: Text('Chargement...'),
+                  child: Text(
+                    'Chargement...',
+                    style: TextStyle(
+                      //fontFamily: 'ComingSoon',
+                    ),
+                  ),
                 );
 
               /** s'affiche lorsque les données sont chargées */
@@ -111,15 +135,6 @@ class BabyLessonsScreen extends StatelessWidget {
             // puis on met à jour le Report
             Global.reportRef.upsert(userReport.toMap());
           },
-          background: Container(
-            child: Center(
-              child: Text(
-                'Bébé leçon supprimé',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-            color: Colors.blueAccent,
-          ),
           child: BabyLessonCard(userReport: userReport, index: index),
           key: UniqueKey(),
           direction: DismissDirection.horizontal,
@@ -147,8 +162,30 @@ class BabyLessonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // grab the bébé leçon by the umbilical cord
     babyLesson = userReport.babyLessons[index];
+    FirebaseUser user = Provider.of<FirebaseUser>(context);
 
-    return Padding(
+    return LessonItem(
+      photoUrl: user.photoUrl,
+      name: babyLesson.name,
+      createdBy: babyLesson.createdBy,
+      creationDate: babyLesson.creationDate,
+      onTap: () {
+        // stocke l'index de ce bébé leçon
+        userReport.setLatestBabyLessonSeen(index);
+        userReport.save();
+
+        Navigator.pushNamed(
+          context,
+          '/step_photo',
+          /*arguments: ScreenArguments(
+            userReport,
+            index,
+          ),*/
+        );
+      },
+    );
+
+    /*Padding(
       padding: const EdgeInsets.fromLTRB(5.0, 0.0, 5.0, 0.0),
       child: Card(
         child: ListTile(
@@ -184,6 +221,6 @@ class BabyLessonCard extends StatelessWidget {
           },
         ),
       ),
-    );
+    );*/
   }
 }

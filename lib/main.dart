@@ -6,11 +6,12 @@ import 'services/services.dart';
 import 'screens/screens.dart';
 import 'package:provider/provider.dart';
 
+
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) {  
     /* La librairie Provider nous permet d'avoir accès 
     au données de l'user partout dans notre application,
     grâce au MultiProvider, wrapped autour de MaterialApp.
@@ -22,12 +23,15 @@ class MyApp extends StatelessWidget {
         StreamProvider<FirebaseUser>.value(value: AuthService().user),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner:  false,
         // Firebase Analytics
         navigatorObservers: [
           FirebaseAnalyticsObserver(analytics: FirebaseAnalytics()),
         ],
 
-        // Named Routes
+        // Les différentes routes
+        // que nous pouvons prendre
+        // dans cette application
         routes: {
           '/': (context) => LoginScreen(),
           '/topics': (context) => TopicsScreen(),
@@ -35,21 +39,36 @@ class MyApp extends StatelessWidget {
           '/profile': (context) => ProfileScreen(),
           '/favorites': (context) => FavoritesScreen(),
           '/create_fetus_lesson': (context) => CreateFetusPage(),
-          StepCreation.routeName: (context) => StepCreation(),
+          '/step_photo': (context) => StepPhoto(),
         },
 
-        // Theme
+        // Les différents styles dispos
+        // globalement dans l'appli
         theme: ThemeData(
-          fontFamily: 'Nunito',
+          fontFamily: 'ComingSoon',
           bottomAppBarTheme: BottomAppBarTheme(
             color: Colors.black87,
           ),
           brightness: Brightness.dark,
           textTheme: TextTheme(
-            body1: TextStyle(fontSize: 18),
-            body2: TextStyle(fontSize: 16),
+            // le style par défaut d'un Text()
+            // par ex: le texte d'accueil
+            // 'Ici commence l'école du futur...'
+            // est body1
+            body1: TextStyle(fontSize: 22),
+
+            
+            //body2: TextStyle(fontSize: 16),
+
+            // le style du texte d'un bouton
             button: TextStyle(letterSpacing: 1.5, fontWeight: FontWeight.bold),
+            
+            // met le texte en gras
             headline: TextStyle(fontWeight: FontWeight.bold),
+
+            // utile pour différencier 
+            // deux textes , 
+            // en appliquant une couleur différente
             subhead: TextStyle(color: Colors.grey),
           ),
           buttonTheme: ButtonThemeData(),

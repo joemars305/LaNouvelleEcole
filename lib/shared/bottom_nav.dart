@@ -5,17 +5,19 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 class AppBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    TextStyle bottomText = TextStyle(fontFamily: 'ComingSoon');
+
     return BottomNavigationBar(
       items: [
         BottomNavigationBarItem(
             icon: Icon(FontAwesomeIcons.graduationCap, size: 20),
-            title: Text('Leçons')),
+            title: Text('Leçons', style: bottomText,)),
         BottomNavigationBarItem(
             icon: Icon(FontAwesomeIcons.heart, size: 20),
-            title: Text('Favoris')),
+            title: Text('Favoris', style: bottomText,)),
         BottomNavigationBarItem(
             icon: Icon(FontAwesomeIcons.babyCarriage, size: 20),
-            title: Text('Bébé leçons')),
+            title: Text('Bébé leçons', style: bottomText,)),
       ].toList(),
       fixedColor: Colors.deepPurple[200],
       onTap: (int idx) {

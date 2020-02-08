@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:quizapp/services/services.dart';
 
 /** 
  * Tout le trala 
@@ -97,8 +98,15 @@ class Report {
   int total;
   List<BabyLesson> babyLessons;
   Map topics;
-
-  Report({ this.uid, this.total, this.babyLessons, this.topics });
+  int latestBabyLessonSeen;
+  
+  Report({ 
+    this.uid, 
+    this.total, 
+    this.babyLessons, 
+    this.topics, 
+    this.latestBabyLessonSeen 
+  });
 
   factory Report.fromMap(Map data) {
     return Report(
@@ -106,7 +114,16 @@ class Report {
       total: data['total'] ?? 0,
       babyLessons: (data['babyLessons'] as List ?? []).map((v) => BabyLesson.fromMap(v)).toList(),
       topics: data['topics'] ?? {},
+      latestBabyLessonSeen: data['latestBabyLessonSeen'] ?? 0,
     );
+  }
+
+  BabyLesson getLatestBabyLessonSeen() {
+    return babyLessons[latestBabyLessonSeen];
+  }
+
+  void setLatestBabyLessonSeen(int index) {
+    latestBabyLessonSeen = index;
   }
 
   Map toMap() {
@@ -115,7 +132,13 @@ class Report {
       'total': total ?? 0,
       'babyLessons': (babyLessons ?? []).map((v) => v.toMap()).toList(),
       'topics': topics ?? {},
+      'latestBabyLessonSeen': latestBabyLessonSeen ?? 0,
     };
+  }
+
+  /// nous permet de sauvegarder le Report utilisateur
+  void save() {
+    Global.reportRef.upsert(toMap());
   }
 
 }
@@ -126,9 +149,11 @@ class BabyLesson {
   String creationDate;
   String category;
   String id;
-  List<Step> steps;
+  List<LessonStep> steps;
+  int currentStep;
+  List<Item> items;
 
-  BabyLesson({ this.name, this.createdBy, this.creationDate, this.category, this.id, this.steps });
+  BabyLesson({ this.name, this.createdBy, this.creationDate, this.category, this.id, this.steps, this.currentStep, this.items });
 
 
   factory BabyLesson.fromMap(Map data) {
@@ -138,9 +163,17 @@ class BabyLesson {
       creationDate: data['creationDate'],
       category: data['category'],
       id: data['id'],
-      steps: (data['steps'] as List ?? []).map((v) => Step.fromMap(v)).toList(),
+      steps: (data['steps'] as List ?? [new LessonStep()]).map((v) => LessonStep.fromMap(v)).toList(),
+      currentStep: data['currentStep'] ?? 0,
+      items: (data['items'] as List ?? []).map((v) => Item.fromMap(v)).toList(),
     );
   }
+
+  LessonStep getCurrentStep() {
+    return steps[currentStep];
+  }
+
+
 
   Map toMap() {
     return {
@@ -149,33 +182,96 @@ class BabyLesson {
       'creationDate': creationDate ?? '',
       'category': category ?? '',
       'id': id ?? '',
-      'steps': (steps ?? []).map((v) => v.toMap()).toList(),
+      'steps': (steps ?? [new LessonStep()]).map((v) => v.toMap()).toList(),
+      'currentStep': currentStep ?? 0,
+      'items': (items ?? []).map((v) => v.toMap()).toList(),
     };
   }
 }
 
 
-class Step {
+class LessonStep {
+  String audioPath;
+  String localPhotoPath;
+  int currentSubstep;
+
+
   
 
-  Step({  });
+  LessonStep({ this.audioPath, this.localPhotoPath, this.currentSubstep });
 
 
-  factory BabyLesson.fromMap(Map data) {
-    return BabyLesson(
-      audioPath: data['audioPath'],
-      photoPath: data['photoPath'],
-      
+  factory LessonStep.fromMap(Map data) {
+    return LessonStep(
+      audioPath: data['audioPath'] ?? null,
+      localPhotoPath: data['localPhotoPath'] ?? null,
+      currentSubstep: data['currentSubstep'] ?? 0,
+    );
+  }
+
+  Map toMap() {
+    return {
+      'audioPath': audioPath ?? null,
+      'localPhotoPath': localPhotoPath ?? null,
+      'currentSubstep': currentSubstep ?? 0,
+    };
+  }
+
+  bool photoTaken() {
+    return localPhotoPath != null;
+  }
+}
+
+
+class Item {
+  String name;
+  int qty;
+  //List<Item> items;
+
+  Item({ this.name, this.qty, /*this.items*/ });
+
+
+  factory Item.fromMap(Map data) {
+    return Item(
+      name: data['name'],
+      qty: data['qty'],
+      //items: (data['items'] as List ?? []).map((v) => Item.fromMap(v)).toList(),
     );
   }
 
   Map toMap() {
     return {
       'name': name ?? '',
-      'createdBy': createdBy ?? '',
+      'qty': qty ?? 0,
+      //'items': (items ?? []).map((v) => v.toMap()).toList(),
     };
   }
 }
+
+/*class Item {
+  String name;
+  int qty;
+  //List<Item> items;
+
+  Item({ this.name, this.qty, /*this.items*/ });
+
+
+  factory Item.fromMap(Map data) {
+    return Item(
+      name: data['name'],
+      qty: data['qty'],
+      //items: (data['items'] as List ?? []).map((v) => Item.fromMap(v)).toList(),
+    );
+  }
+
+  Map toMap() {
+    return {
+      'name': name ?? '',
+      'qty': qty ?? 0,
+      //'items': (items ?? []).map((v) => v.toMap()).toList(),
+    };
+  }
+}*/
 
 // Contient entre autres, le Report utilisateur
 // que l'on souhaite passer d'un écran à l'autre

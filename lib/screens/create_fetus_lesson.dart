@@ -5,22 +5,20 @@ import '../services/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
-
-
 const nommeTonFetus = "Détails sur le bébé";
 const messageNameBaby = "Donne un nom à ta leçon.";
-const messageCategoryBaby = "Cette leçon fait partie de quelle catégorie ?";
+const messageCategoryBaby = "Catégorie ?";
 const iconPath = "assets/covers/baby.png";
 
 // l'écran ou on crée un bébé leçon,
-// puis on l'ajoute a notre base de données 
+// puis on l'ajoute a notre base de données
 class CreateFetusPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => new _CreateFetusPageState();
 }
 
 class _CreateFetusPageState extends State<CreateFetusPage> {
-  // le nom de cette leçon 
+  // le nom de cette leçon
   String _name;
 
   // dans quelle catégorie se situe cette leçon
@@ -28,7 +26,7 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
 
   // toutes les catégories de leçons disponibles
   List<String> categories = ['Nourriture', 'Logement', 'Energie'];
-  
+
   // utile pour le fonctionnement du TextFormField
   final _formKey = new GlobalKey<FormState>();
 
@@ -36,10 +34,15 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
   Widget build(BuildContext context) {
     return new Scaffold(
       appBar: new AppBar(
-        title: new Text(nommeTonFetus),
+        title: new Text(
+          nommeTonFetus,
+          style: TextStyle(
+            //fontFamily: 'ComingSoon',
+          ),
+        ),
       ),
       // showForm() affiche les différents
-      // forms nécessaire à la récupération d'infos 
+      // forms nécessaire à la récupération d'infos
       // sur le bébé que l'utilisateur veut créer
       body: showForm(),
     );
@@ -68,10 +71,15 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
         maxLines: 1,
         keyboardType: TextInputType.text,
         autofocus: false,
+        style: TextStyle(
+          //fontFamily: 'ComingSoon',
+        ),
         decoration: new InputDecoration(
             hintText: 'Comment faire/fabriquer/cultiver ...',
             labelText: messageNameBaby,
-            
+            labelStyle: TextStyle(
+              //fontFamily: 'ComingSoon',
+            ),
             icon: new Icon(
               FontAwesomeIcons.smile,
               color: Colors.grey,
@@ -93,12 +101,17 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
             decoration: InputDecoration(
               icon: const Icon(Icons.color_lens),
               labelText: messageCategoryBaby,
+              labelStyle: TextStyle(
+                //fontFamily: 'ComingSoon',
+              ),
             ),
             isEmpty: currentCategory == '',
             child: new DropdownButtonHideUnderline(
               child: new DropdownButton(
                 value: currentCategory,
-                style: TextStyle(fontSize: 20),
+                style: TextStyle(
+                  //fontFamily: 'ComingSoon',
+                ),
                 isDense: true,
                 onChanged: (String newValue) {
                   setState(() {
@@ -120,7 +133,7 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
     );
   }
 
-  // un formulaire recueillant les 
+  // un formulaire recueillant les
   // infos de base sur le bébé leçon
   Widget showForm() {
     return new Container(
@@ -155,13 +168,19 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
             shape: new RoundedRectangleBorder(
                 borderRadius: new BorderRadius.circular(30.0)),
             color: Colors.pinkAccent,
-            child: new Text('Crée bébé leçon',
-                style: new TextStyle(fontSize: 20.0, color: Colors.white)),
+            child: new Text(
+              'Crée bébé leçon',
+              style: new TextStyle(
+                fontSize: 25.0, 
+                color: Colors.white,
+                fontFamily: 'Lobster',
+              ),
+            ),
             // quand on appuie sur le bouton,
             // on vérifie que l'user à écrit un nom,
-            // si tout est OK, on crée un 
+            // si tout est OK, on crée un
             // bébé leçon dans
-            // la base de données, puis on retourne 
+            // la base de données, puis on retourne
             // vers l'écran des bébé leçons
             onPressed: validateAndSave,
           ),
@@ -183,7 +202,7 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
     return false;
   }
 
-  // sauvegarde le bébé lesson dans 
+  // sauvegarde le bébé lesson dans
   // la liste de bébé leçons de l'utilisateur
   Future<bool> saveBabyLesson() async {
     try {
@@ -191,24 +210,22 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
       // on a besoin de cela pour obtenir le pseudo
       // de l'utilisateur
       FirebaseUser user = Provider.of<FirebaseUser>(context);
-      
+
       // le dossier Report de cet utilisateur
       Report userReport = await Global.reportRef.getDocument();
-      
+
       // la date de naissance du bébé leçon
       DateTime now = DateTime.now();
       String formattedDate = DateFormat('dd-MM-yyyy').format(now);
-      
-      
+
       // un bébé leçon fraichement crée
       // sous forme d'objet
       // (voir models.dart pour plus de détails sur BabyLesson)
       BabyLesson newLesson = new BabyLesson(
-        name: _name, 
-        createdBy: user.displayName,
-        creationDate: formattedDate,
-        category: currentCategory
-      );
+          name: _name,
+          createdBy: user.displayName,
+          creationDate: formattedDate,
+          category: currentCategory);
 
       // ajoute ce bébé leçon dans la liste
       // de bébé leçons du Report de l'utilisateur
@@ -218,20 +235,15 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
       // avec ce nouveau Report agrémenté d'un nouveau bébé leçon
       Global.reportRef.upsert(userReport.toMap());
 
-      // dirige toi vers l'écran précédent 
+      // dirige toi vers l'écran précédent
       // (celui des bébé leçons)
       Navigator.pop(context);
 
       return true;
-    } catch(error) {
+    } catch (error) {
       /** */
       print(error);
       return false;
     }
-    
-      
   }
-
-
-
 }
