@@ -24,3 +24,15 @@ const NO_TEXT = null;
 /// howManySubsteps est la quantité
 /// de sous étapes à effectuer
 const howManySubsteps = 4;
+
+/// represente l'etape prendre une photo
+const PRENDRE_PHOTO = 0;
+
+/// represente l'etape MESSAGE AUDIO
+const MSG_AUDIO = 1;
+
+/// represente l'etape TEXTE OU EMOJI
+const TEXTE_OU_EMOJI = 2;
+
+/// represente l'etape enregistre sur internet
+const ENREGISTRER = 3;

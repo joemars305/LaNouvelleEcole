@@ -39,6 +39,37 @@ class _StepPhotoState extends State<StepPhoto> {
     }
   }*/
 
+  /// SOUS_ETAPES represente l'etape actuelle
+  ///
+  /// 0 pour PRENDRE_PHOTO
+  /// 1 pour MSG_AUDIO
+  /// 2 pour TEXTE_OU_EMOJI
+  /// 3 pour ENREGISTRER
+  int sous_etape = PRENDRE_PHOTO;
+
+  /// FONCTION
+  /*int fnForSousEtape() {
+    if (sous_etape == PRENDRE_PHOTO) {
+      return PRENDRE_PHOTO;
+    } 
+    
+    else if (sous_etape == MSG_AUDIO) {
+      return MSG_AUDIO;
+    } 
+    
+    else if (sous_etape == TEXTE_OU_EMOJI) {
+      return TEXTE_OU_EMOJI;
+    }
+
+    else if (sous_etape == ENREGISTRER) {
+      return ENREGISTRER;
+    }
+
+    else {
+      throw Error();
+    }
+  }*/
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Report>(
@@ -64,7 +95,8 @@ class _StepPhotoState extends State<StepPhoto> {
         else if (snapshot.hasError) {
           /// inform the user about it
           panel = errorMsg();
-        } 
+        }
+
         /// if we're loading userReport
         else {
           /// tell johnny to wait
@@ -79,33 +111,67 @@ class _StepPhotoState extends State<StepPhoto> {
 
   /// la barre en haut de l'écran
   Widget getTopBar(Report userReport) {
-    // stepIndex est l'index de la dernière
-    // étape consultée par l'user
-    BabyLesson lesson = userReport.getLatestBabyLessonSeen();
-
-    /// on ajoute 1 a l'index parce qu'on veut
-    /// etape 1, etape 2, etc... au lieu de
-    /// etape 0, etape 1, etc...
-    int stepIndex = lesson.currentStep + 1;
-    String currentStepStr = "Etape " + stepIndex.toString();
-
-    /// substepIndex est la sous étape
-    /// de l'étape actuelle
-    LessonStep currentStep = lesson.getCurrentStep();
-    int substepIndex = currentStep.currentSubstep + 1;
-
-    String currentSubstep =
-        "(" + substepIndex.toString() + "/" + howManySubsteps.toString() + ")";
+    String title;
     
+    if (userReport != null) {
+      // stepIndex est l'index de la dernière
+      // étape consultée par l'user
+      BabyLesson lesson = userReport.getLatestBabyLessonSeen();
+
+      /// on ajoute 1 a l'index parce qu'on veut
+      /// etape 1, etape 2, etc... au lieu de
+      /// etape 0, etape 1, etc...
+      int stepIndex = lesson.currentStep + 1;
+      String currentStepStr = "Etape " + stepIndex.toString();
+
+      /// substepIndex est la sous étape
+      /// de l'étape actuelle
+      LessonStep currentStep = lesson.getCurrentStep();
+      int substepIndex = currentStep.currentSubstep + 1;
+
+      String currentSubstep = "(" +
+          substepIndex.toString() +
+          "/" +
+          howManySubsteps.toString() +
+          ")";
+
+      title = currentStepStr + " " + currentSubstep;
+    } 
+    
+    else {
+      title = "La Nouvelle Ecole";
+    }
+
     return AppBar(
-      title: Text(currentStepStr + " " + currentSubstep),
+      title: Text(title),
+      actions: <Widget>[
+        /// l'icone suivant
+        nextButton(),
+      ],
     );
+  }
+
+  /// le bouton permettant
+  /// de passer d'une substep a une autre
+  /// puis de passer à une autre étape
+  /// lorsque toutes les substep sont ok
+  Widget nextButton() {
+    return IconButton(
+      icon: Icon(
+        Icons.arrow_forward,
+      ),
+      onPressed: nextButtonAction,
+    );
+  }
+
+  /// les actions a effectuer pour passer
+  /// d'une substep à un autre
+  void nextButtonAction() {
+    print('Oki');
   }
 
   // the whole screen
   Widget wholeScreen(Report userReport, Widget panel) {
-    
-
     return Scaffold(
       // la barre en haut
       appBar: getTopBar(userReport),
