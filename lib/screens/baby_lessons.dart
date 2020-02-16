@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:quizapp/screens/screens.dart';
+//import 'package:quizapp/screens/screens.dart';
 import '../services/services.dart';
 import '../shared/shared.dart';
 
@@ -144,8 +144,8 @@ class BabyLessonsScreen extends StatelessWidget {
   }
 }
 
-/** le layout d'un bébé leçon individuel 
- * dans la liste de bébé leçons */
+//// le layout d'un bébé leçon individuel 
+/// dans la liste de bébé leçons 
 class BabyLessonCard extends StatelessWidget {
   // les données utilisateur
   final Report userReport;
@@ -153,15 +153,14 @@ class BabyLessonCard extends StatelessWidget {
   // la position du bébé leçon dans la liste de bébé leçons
   final int index;
 
-  // le bébé leçon of interest
-  BabyLesson babyLesson;
+  
 
   BabyLessonCard({this.userReport, this.index});
 
   @override
   Widget build(BuildContext context) {
     // grab the bébé leçon by the umbilical cord
-    babyLesson = userReport.babyLessons[index];
+    BabyLesson babyLesson = userReport.babyLessons[index];
     FirebaseUser user = Provider.of<FirebaseUser>(context);
 
     return LessonItem(
@@ -176,7 +175,7 @@ class BabyLessonCard extends StatelessWidget {
 
         Navigator.pushNamed(
           context,
-          '/step_photo',
+          '/step_creation',
           /*arguments: ScreenArguments(
             userReport,
             index,

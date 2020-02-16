@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
           '/profile': (context) => ProfileScreen(),
           '/favorites': (context) => FavoritesScreen(),
           '/create_fetus_lesson': (context) => CreateFetusPage(),
-          '/step_photo': (context) => StepPhoto(),
+          '/step_creation': (context) => StepCreation(),
         },
 
         // Les différents styles dispos

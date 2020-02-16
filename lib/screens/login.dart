@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../shared/shared.dart';
+//import '../shared/shared.dart';
 import '../services/services.dart';
 
-/**
- * 
- * Ceci représente l'écran d'accueil que l'on
- * voit quand on à pas encore crée un compte,
- * et quand on est pas connecté a Google
- * 
- * 
- */
-
+///
+///
+/// Ceci représente l'écran d'accueil que l'on
+/// voit quand on à pas encore crée un compte,
+/// et quand on est pas connecté a Google
+/// 
 class LoginScreen extends StatefulWidget {
   createState() => LoginScreenState();
 }
