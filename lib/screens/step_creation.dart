@@ -462,8 +462,16 @@ class _StepCreationState extends State<StepCreation>
 
   /// une liste d'objets
   Widget itemsList(Report userReport) {
-    return Center(
-      child: Text("Les objets."),
+    var babyLesson = userReport.getLatestBabyLessonSeen();
+
+    return ListView.builder(
+      // combien d' objets
+      itemCount: babyLesson.items.length,
+      // crée une liste d'items
+      // qu'on peut supprimer en swipant
+      itemBuilder: (context, index) {
+        return swipableItem(context, index, userReport);
+      },
     );
   }
 
@@ -714,12 +722,12 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /*void ...() {
-
-  }
-
-  void ...() {
-
-  }*/
+          
+            }
+          
+            void ...() {
+          
+            }*/
 
   // l'icone nous permettant d'enregistrer
   /// un message audio
@@ -897,9 +905,7 @@ class _StepCreationState extends State<StepCreation>
       /// crée un objet portant ce nom
       else if (itemName.length > 0) {
         return createNewItem(itemName, userReport);
-      } 
-      
-      else {
+      } else {
         throw Error();
       }
     });
@@ -1064,7 +1070,8 @@ class _StepCreationState extends State<StepCreation>
     setCompletionEvent();
 
     return StreamBuilder<Report>(
-      stream: Global.reportRef.documentStream, // a previously-obtained Future<String> or null
+      stream: Global.reportRef
+          .documentStream, // a previously-obtained Future<String> or null
       builder: (BuildContext context, AsyncSnapshot<Report> snapshot) {
         Report userReport;
 
@@ -1135,11 +1142,62 @@ class _StepCreationState extends State<StepCreation>
     displaySnackbar(_scaffoldKey, msg, durationMsec);
   }
 
-  /// 
+  ///
   void cancelledItemCreation() {
     String msg = "Création d'objet annulée.";
     int durationMsec = 2000;
 
     displaySnackbar(_scaffoldKey, msg, durationMsec);
+  }
+
+  /// un objet qu'on peut supprimer de la liste
+  /// en swipant
+  Widget swipableItem(BuildContext context, int index, Report userReport) {
+    return Dismissible(
+      onDismissed: (DismissDirection direction) {
+        afterSwipe(context, index, userReport);
+      },
+      child: itemLayout(context, index, userReport),
+      key: UniqueKey(),
+      direction: DismissDirection.horizontal,
+    );
+  }
+
+  /// after wiping we do this to erase the item
+  void afterSwipe(BuildContext context, int index, Report userReport) {
+    // une fois swipé, on supprime l'item
+    // situé à la position 'index', dans la liste de bébé leçons
+    // items du bébé lecon
+    userReport.getLatestBabyLessonSeen().items.removeAt(index);
+
+    // puis on met à jour le Report
+    userReport.save();
+
+    /// informe l'user qu'un objet est supprimé
+    String msg = "Objet supprimé avec succès !";
+    int durationMsec = 2000;
+    displaySnackbar(_scaffoldKey, msg, durationMsec);
+  }
+
+  /// la bannière représentant un objet individuel
+  /// avec 2 boutons + et - pour modifier la quantité
+  /// de cet item.
+  itemLayout(BuildContext context, int index, Report userReport) {
+    return Container(
+      padding: EdgeInsets.all(10.0),
+      margin: EdgeInsets.all(5.0),
+      decoration: new BoxDecoration(
+        color: Colors.orange,
+        borderRadius: new BorderRadius.all(Radius.circular(5.0)),
+      ),
+      child: Row(
+        children: <Widget>[
+          minusButton(context, index, userReport),
+          qtyItem(context, index, userReport),
+          itemName(context, index, userReport),
+          plusButton(context, index, userReport),
+        ],
+      ),
+    );
   }
 }
