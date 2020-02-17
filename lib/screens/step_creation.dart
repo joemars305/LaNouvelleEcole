@@ -10,6 +10,13 @@ import 'package:quizapp/shared/photo_canvas.dart';
 import 'package:file/local.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+import '../parts/consts.dart';
+import '../parts/consts.dart';
+import '../parts/consts.dart';
+import '../parts/consts.dart';
+import '../parts/consts.dart';
+import '../parts/parts.dart';
+
 /// Widget to capture and crop the image
 class StepCreation extends StatefulWidget {
   final LocalFileSystem localFileSystem;
@@ -1185,7 +1192,7 @@ class _StepCreationState extends State<StepCreation>
   itemLayout(BuildContext context, int index, Report userReport) {
     return Container(
       padding: EdgeInsets.all(10.0),
-      margin: EdgeInsets.all(5.0),
+      margin: EdgeInsets.all(10.0),
       decoration: new BoxDecoration(
         color: Colors.orange,
         borderRadius: new BorderRadius.all(Radius.circular(5.0)),
@@ -1199,5 +1206,137 @@ class _StepCreationState extends State<StepCreation>
         ],
       ),
     );
+  }
+
+  /// que faire qd on appuie sur -
+  void minusButtonActions(BuildContext context, int index, Report userReport) {
+    var item = userReport.getLatestBabyLessonSeen().items[index];
+
+    /// si il reste qu'un item, informe l'user
+    /// qu'il peut le supprimer en le swipant
+    if (item.qty == 1) {
+      String msg = "Pour supprimer un item, swipez le !";
+      int durationMsec = 1000;
+
+      displaySnackbar(_scaffoldKey, msg, durationMsec);
+    }
+
+    /// sinon, décremente la qté d'item
+    else {
+      String msg = "OK ! Un objet de moins.";
+      int durationMsec = 1000;
+
+      displaySnackbar(_scaffoldKey, msg, durationMsec);
+
+      // on diminue la qté de cet item
+      item.qty--;
+
+      // puis on met à jour le Report
+      userReport.save();
+    }
+  }
+
+  /// le bouton -
+  Widget minusButton(BuildContext context, int index, Report userReport) {
+    // le bouton -
+    return IconButton(
+      iconSize: ITEM_ICON_SIZE,
+      icon: Icon(
+        Icons.remove,
+        size: ITEM_ICON_SIZE,
+        color: ITEM_ICON_COLOR,
+      ),
+      onPressed: () {
+        minusButtonActions(context, index, userReport);
+      },
+    );
+  }
+
+  /// le nom de l'objet
+  Widget itemName(BuildContext context, int index, Report userReport) {
+    // le nom de l'item
+    /// 
+    return Expanded(
+      child: Container(
+        margin: EdgeInsets.only(
+          left: 10,
+          //right: 10,
+        ),
+        child: Text(
+          userReport.getLatestBabyLessonSeen().items[index].name,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: ITEM_ICON_SIZE,
+            color: ITEM_ICON_COLOR,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// combien de cet item existe il ?
+  Widget qtyItem(BuildContext context, int index, Report userReport) {
+    return Container(
+      child: Column(
+        children: <Widget>[
+          qtyDesc(),
+          qtyNumber(userReport, index),
+        ],
+      ),
+    );
+  }
+
+  /// Qté de l'objet
+  Text qtyNumber(Report userReport, int index) {
+    return Text(
+      userReport.getLatestBabyLessonSeen().items[index].qty.toString(),
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: ITEM_ICON_SIZE,
+        color: ITEM_ICON_COLOR,
+      ),
+    );
+  }
+
+  /// titre descriptif du chiffre dessous
+  Text qtyDesc() {
+    return Text(
+      "Qté",
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: ITEM_ICON_SIZE,
+        color: ITEM_ICON_COLOR,
+      ),
+    );
+  }
+
+  /// le bouton +
+  plusButton(BuildContext context, int index, Report userReport) {
+    return IconButton(
+      iconSize: ITEM_ICON_SIZE,
+      icon: Icon(
+        Icons.add,
+        size: ITEM_ICON_SIZE,
+        color: ITEM_ICON_COLOR,
+      ),
+      onPressed: () {
+        plusButtonActions(context, index, userReport);
+      },
+    );
+  }
+
+  /// que faire qd on appuie sur +
+  void plusButtonActions(BuildContext context, int index, Report userReport) {
+    String msg = "OK ! Un objet de plus.";
+    int durationMsec = 1000;
+    Item item = userReport.getLatestBabyLessonSeen().items[index];
+
+    displaySnackbar(_scaffoldKey, msg, durationMsec);
+
+    // on diminue la qté de cet item
+    item.qty++;
+
+    // puis on met à jour le Report
+    userReport.save();
   }
 }

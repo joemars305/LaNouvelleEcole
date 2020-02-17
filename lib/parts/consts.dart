@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// PHOTO_SIZE représente la taille
 /// de la photo de l'étape.
 ///
@@ -109,3 +111,9 @@ const PAUSED = 2;
 /// Future<un String d'une lettre ou plus> pour le reste
 const NO_USER_INPUT = null;
 const EMPTY_USER_INPUT = "";
+
+/// la taille des icones d'un objet
+const ITEM_ICON_SIZE = 15.0;
+
+/// la couleur des icones d'un objet
+const ITEM_ICON_COLOR = Colors.white;
