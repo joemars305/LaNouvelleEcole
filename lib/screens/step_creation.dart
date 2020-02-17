@@ -26,6 +26,9 @@ class _StepCreationState extends State<StepCreation>
   /// lors de l'enregistrement audio
   AnimationController controller;
 
+  /// nous permet d'afficher des snackbar
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
   /// convertit le temps restant
   /// de l'enregistrement audio (Duration) en cours,
   /// en format mm:ss (string)
@@ -253,8 +256,6 @@ class _StepCreationState extends State<StepCreation>
   
   */
 
-  
-
   /// l'event qui remet a zero le state du player
   /// lorsque un fichier audio vient d'etre joué jusqu'a la fin
   void setCompletionEvent() {
@@ -277,7 +278,7 @@ class _StepCreationState extends State<StepCreation>
     } else if (sous_etape == ENREGISTRER) {
       return enregistrerPanel();
     } else if (sous_etape == INVENTAIRE) {
-      return inventairePanel();
+      return inventairePanel(userReport);
     } else {
       throw Error();
     }
@@ -412,7 +413,59 @@ class _StepCreationState extends State<StepCreation>
 
   Widget enregistrerPanel() {}
 
-  Widget inventairePanel() {}
+  /// l'inventaire d'objets
+  Widget inventairePanel(Report userReport) {
+    /// combien d'items individuels existent dans l'inventaire ?
+    int qtyItems = userReport.getLatestBabyLessonSeen().items.length;
+
+    print(userReport.getLatestBabyLessonSeen().items);
+
+    /// si il y aucun items dans l'inventaire
+    /// affiche un message invitant user
+    /// à appuyer sur l'icone +
+    if (qtyItems == 0) {
+      return createItemsMsg();
+    }
+
+    /// sinon affiche une liste
+    /// des items
+    else {
+      return itemsList(userReport);
+    }
+  }
+
+  /// Ajoute un objet dans ton inventaire en appuyant sur +
+  Widget createItemsMsg() {
+    return Container(
+      color: Colors.pink,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            itemIcon(),
+            msg("Ajoute un objet dans ton inventaire en appuyant sur +"),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// une icone représentant un objet lambda
+  Widget itemIcon() {
+    return Image.asset(
+      'assets/wrench.png',
+      width: 45,
+      height: 45,
+      fit: BoxFit.contain,
+    );
+  }
+
+  /// une liste d'objets
+  Widget itemsList(Report userReport) {
+    return Center(
+      child: Text("Les objets."),
+    );
+  }
 
   /// la barre en haut de l'écran
   Widget getTopBar(Report userReport) {
@@ -500,19 +553,19 @@ class _StepCreationState extends State<StepCreation>
   }
 
   // la barre d'icones en bas de la photo
-  Widget getBottomBar() {
+  Widget getBottomBar(Report userReport) {
     return BottomAppBar(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         // icones homogènement éparpillées
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: substepIcons(),
+        children: substepIcons(userReport),
       ),
     );
   }
 
   /// les icones de la sous étape en cours
-  List<Widget> substepIcons() {
+  List<Widget> substepIcons(Report userReport) {
     if (sous_etape == PRENDRE_PHOTO) {
       return prendrePhotoIcons();
     } else if (sous_etape == MSG_AUDIO) {
@@ -522,7 +575,7 @@ class _StepCreationState extends State<StepCreation>
     } else if (sous_etape == ENREGISTRER) {
       return enregistrerIcons();
     } else if (sous_etape == INVENTAIRE) {
-      return inventaireIcons();
+      return inventaireIcons(userReport);
     } else {
       throw Error();
     }
@@ -775,7 +828,12 @@ class _StepCreationState extends State<StepCreation>
 
   List<Widget> enregistrerIcons() {}
 
-  List<Widget> inventaireIcons() {}
+  /// les icones de l'inventaire
+  List<Widget> inventaireIcons(Report userReport) {
+    return [
+      addItemIcon(userReport),
+    ];
+  }
 
   /// Select an image via gallery or camera
   Future<void> _pickImage(ImageSource source) async {
@@ -790,6 +848,61 @@ class _StepCreationState extends State<StepCreation>
     } catch (e) {
       print(e);
     }
+  }
+
+  // l'icone nous permettant d'ajouter
+  /// un item dans notre inventaire
+  Widget addItemIcon(Report userReport) {
+    return IconButton(
+      icon: Icon(
+        Icons.add,
+        size: 30,
+      ),
+      onPressed: () {
+        addItemActions(userReport);
+      },
+      color: Colors.blue,
+    );
+  }
+
+  /// que faire quand on veut ajouter un
+  /// item dans notre liste d'items
+  void addItemActions(Report userReport) {
+    /// obtient le nom de l'objet
+    Future<String> itemName = getItemName();
+
+    /// une fois obtenu on veut faire les
+    /// choses suivantes..
+    processItemName(itemName, userReport);
+  }
+
+  /// on fait quoi avec l'input de l'user ?
+  void processItemName(Future<String> itemName, Report userReport) {
+    itemName.then((itemName) {
+      /// si l'user a appuyé sur ANNULER
+      /// lors de l'entrée du nom de l'objet
+      /// on fé rien
+      if (itemName == NO_USER_INPUT) {
+        return cancelledItemCreation();
+      }
+
+      /// si l'user à rien écrit
+      /// on l'informe qu'il faut écrire
+      /// qqch, snackbar
+      else if (itemName == EMPTY_USER_INPUT) {
+        return typeSomethingDude();
+      }
+
+      /// si l'user à écrit quelque chose
+      /// crée un objet portant ce nom
+      else if (itemName.length > 0) {
+        return createNewItem(itemName, userReport);
+      } 
+      
+      else {
+        throw Error();
+      }
+    });
   }
 
   // l'icone nous permettant de prendre
@@ -929,12 +1042,14 @@ class _StepCreationState extends State<StepCreation>
         return true;
       },
       child: Scaffold(
+        key: _scaffoldKey,
+
         // la barre en haut
         appBar: getTopBar(userReport),
 
         // la barre d'icones en bas de l'écran
         // (photo, microphone, text, etc...)
-        bottomNavigationBar: getBottomBar(),
+        bottomNavigationBar: getBottomBar(userReport),
 
         // la zone contenant photo, texte, émojis, etc...
         body: panel,
@@ -948,9 +1063,8 @@ class _StepCreationState extends State<StepCreation>
     /// lorsque un fichier audio vient d'etre joué jusqu'a la fin
     setCompletionEvent();
 
-    return FutureBuilder<Report>(
-      future: Global.reportRef
-          .getDocument(), // a previously-obtained Future<String> or null
+    return StreamBuilder<Report>(
+      stream: Global.reportRef.documentStream, // a previously-obtained Future<String> or null
       builder: (BuildContext context, AsyncSnapshot<Report> snapshot) {
         Report userReport;
 
@@ -983,5 +1097,49 @@ class _StepCreationState extends State<StepCreation>
         return wholeScreen(userReport, panel);
       },
     );
+  }
+
+  /// obtient un string de l'user
+  Future<String> getItemName() {
+    String title = "Comment s'appelle l'objet ?";
+    String subtitle = "Nom de l'objet";
+    String hint = "Un tournevis...";
+
+    return getUserInput(context, title, subtitle, hint);
+  }
+
+  /// affiche snackbar informant user qu'il
+  /// faut écrire qqchose
+  void typeSomethingDude() {
+    String msg = "Donne un nom à cet item, s'il te plait.";
+    int durationMsec = 2000;
+
+    displaySnackbar(_scaffoldKey, msg, durationMsec);
+  }
+
+  /// ajoute nouveau item dans liste items user,
+  /// puis sauvegarde user data
+  void createNewItem(String itemName, Report userReport) {
+    /// ajoute item dans liste items
+    userReport
+        .getLatestBabyLessonSeen()
+        .items
+        .add(new Item(name: itemName, qty: 1));
+
+    /// sauvegarde user data
+    userReport.save();
+
+    String msg = "Objet suivant crée: '" + itemName + "'";
+    int durationMsec = 2000;
+
+    displaySnackbar(_scaffoldKey, msg, durationMsec);
+  }
+
+  /// 
+  void cancelledItemCreation() {
+    String msg = "Création d'objet annulée.";
+    int durationMsec = 2000;
+
+    displaySnackbar(_scaffoldKey, msg, durationMsec);
   }
 }

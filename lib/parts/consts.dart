@@ -98,3 +98,14 @@ void endAnim() {
 const STOPPED = 0;
 const PLAYING = 1;
 const PAUSED = 2;
+
+
+/// USER_INPUT_STRING représente 
+/// un futur texte provenant
+/// de l'utilisateur
+/// 
+/// null pour NO_USER_INPUT
+/// Future<''> pour EMPTY_USER_INPUT
+/// Future<un String d'une lettre ou plus> pour le reste
+const NO_USER_INPUT = null;
+const EMPTY_USER_INPUT = "";

@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "522397725283-0mutsvj6ll6iuufmrr6kkit084oiomcm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.fireship.lanouvelleecole",
+            "certificate_hash": "2dee60baade43c3cfa38722cba8d563125a577d2"
+          }
+        },
+        {
           "client_id": "522397725283-f9vuvaa12blo57qhgjkbcskk5j798lqc.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
