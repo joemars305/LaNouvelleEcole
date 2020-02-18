@@ -95,7 +95,8 @@ Future<String> getUserInput(
 }
 
 /// affiche un message snackbar
-void displaySnackbar(GlobalKey<ScaffoldState> scaffoldKey, String msg, int durationMsec) {
+void displaySnackbar(
+    GlobalKey<ScaffoldState> scaffoldKey, String msg, int durationMsec) {
   final snackBar = SnackBar(
     content: Text(msg),
     duration: Duration(milliseconds: durationMsec),
@@ -107,3 +108,109 @@ void displaySnackbar(GlobalKey<ScaffoldState> scaffoldKey, String msg, int durat
   // tree and use it to show a SnackBar.
   scaffoldKey.currentState.showSnackBar(snackBar);
 }
+
+
+/// FUTURE_CHOICE représente
+/// un futur choix provenant
+/// de l'utilisateur
+///
+/// null pour NO_FUTURE_CHOICE
+/// Future<Choice> autrement
+
+/*
+void fnForFutureChoice(Future<Choice> futureChoice) {
+  futureChoice.then((choice) {
+    if (choice == NO_FUTURE_CHOICE) {
+      return noChoice();
+    }
+
+    else {
+      return doSomethingWChoice();
+    }
+  });
+}
+*/
+
+/// getUserChoice nous permet d'obtenir un Choice venant
+/// de l'utilisateur
+///
+/// INPUTS
+///
+/// - context, un BuildContext
+/// - title, un String, le titre du dialog
+/// - choices une liste de type Choices
+///
+/// OUTPUTS
+///
+/// - un FUTURE_CHOICE
+///
+Future<Choice> getUserChoice(
+  BuildContext context,
+  String title,
+  List<Choice> choices,
+) async {
+  return await showDialog<Choice>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: Text(title),
+          children: makeChoicesList(context, choices),
+        );
+      });
+}
+
+/// crée un liste de choix cliquables
+List makeChoicesList(BuildContext context, List<Choice> choices) {
+  return choices.map((choice) {
+    return handleChoice(context, choice);
+  }).toList();
+}
+
+/// crée un choix individuel cliquable
+SimpleDialogOption handleChoice(BuildContext context, Choice choice) {
+  String choiceDesc = choice.choiceDescription;
+  int choiceVal = choice.choiceValue;
+
+  return SimpleDialogOption(
+    onPressed: () {
+      Navigator.pop(context, choice);
+    },
+    child: Text(choiceDesc),
+  );
+}
+
+/// Choice est un objet représentant
+/// un choix individuel que l'user
+/// peut faire parmis plusieurs choix
+///
+/// Cet objet à 2 champs:
+///
+/// choiceDescription est un String décrivant le choix
+/// choiceValue est un int représentant la valeur de ce choix
+
+/*
+fnForChoice(Choice choice) {
+  String choiceDesc = choice.choiceDescription;
+  int choiceVal = choice.choiceValue;
+
+
+}
+*/
+class Choice {
+  String choiceDescription;
+  int choiceValue;
+
+  Choice(this.choiceDescription, this.choiceValue);
+}
+
+/// Choices représente une liste de Choice
+///
+
+/*
+List fnForChoices(List<Choice> choices) {
+  return choices.map((choice) {
+    return handleChoice(choice);
+  }).toList();
+}
+*/

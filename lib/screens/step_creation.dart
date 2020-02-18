@@ -11,10 +11,6 @@ import 'package:file/local.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 import '../parts/consts.dart';
-import '../parts/consts.dart';
-import '../parts/consts.dart';
-import '../parts/consts.dart';
-import '../parts/consts.dart';
 import '../parts/parts.dart';
 
 /// Widget to capture and crop the image
@@ -29,6 +25,49 @@ class StepCreation extends StatefulWidget {
 
 class _StepCreationState extends State<StepCreation>
     with TickerProviderStateMixin {
+  @override
+  Widget build(BuildContext context) {
+    /// l'event qui remet a zero le state du player
+    /// lorsque un fichier audio vient d'etre joué jusqu'a la fin
+    setCompletionEvent();
+
+    return StreamBuilder<Report>(
+      stream: Global.reportRef
+          .documentStream, // a previously-obtained Future<String> or null
+      builder: (BuildContext context, AsyncSnapshot<Report> snapshot) {
+        Report userReport;
+
+        /// panel is the content between
+        /// the appbar and the bottomappbar.
+        Widget panel;
+
+        /// if we received the userReport
+        if (snapshot.hasData) {
+          userReport = snapshot.data;
+
+          /// it's time to do steps
+          panel = substepPanel(userReport);
+        }
+
+        /// if something got wrong trying
+        /// to get userReport
+        else if (snapshot.hasError) {
+          /// inform the user about it
+          panel = errorMsg();
+        }
+
+        /// if we're loading userReport
+        else {
+          /// tell johnny to wait
+          panel = loadingMsg();
+        }
+
+        /// return the whole screen (appbar + middle + bottomappbar)
+        return wholeScreen(userReport, panel);
+      },
+    );
+  }
+
   /// permet de créer une jolie amimation de countdown
   /// lors de l'enregistrement audio
   AnimationController controller;
@@ -263,6 +302,50 @@ class _StepCreationState extends State<StepCreation>
   
   */
 
+  /// TXT_OU_EMOJI représente ce qu'on veut afficher
+  /// sur la photo d'étape
+  ///
+  /// 0 pour DRAW_TEXT
+  /// 1 pour DRAW_EMOJI
+  int _txtOuEmoji = DRAW_TEXT;
+
+  /*
+  Widget txtOuEmoji() {
+    if (_txtOuEmoji == DRAW_TEXT) {
+      return xxx();
+    }
+
+    else if (_txtOuEmoji == DRAW_EMOJI) {
+      return yyy();
+    }
+
+    else {
+      throw Error();
+    }
+  }
+  */
+
+  /// TEXTS_AND_EMOJIS représente le texte
+  /// et les émojis qu'on veut ajouter
+  /// sur notre photo pour expliquer des trucs
+  ///
+  /// [] pour NO_TEXTS_AND_EMOJIS
+  /// List<DragBox> autrement
+  ///
+  List<DragBox> _textsAndEmojis = NO_TEXTS_AND_EMOJIS;
+
+  /*
+  fn() {
+    if (_textsAndEmojis == NO_TEXTS_AND_EMOJIS) {
+      return aaa();
+    }
+
+    else {
+      return bbb();
+    }
+  }
+  */
+
   /// l'event qui remet a zero le state du player
   /// lorsque un fichier audio vient d'etre joué jusqu'a la fin
   void setCompletionEvent() {
@@ -293,7 +376,11 @@ class _StepCreationState extends State<StepCreation>
 
   /// permet de voir la photo qu'on a prise
   Widget prendrePhotoPanel() {
-    return PhotoCanvas(photoFile: _imageFile, photoSize: _photoSize);
+    return PhotoCanvas(
+      photoFile: _imageFile, 
+      photoSize: _photoSize,
+      textsAndEmojis: _textsAndEmojis,
+    );
   }
 
   /// si on n'enregistre pas de message audio,
@@ -416,7 +503,14 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  Widget txtOuEmojiPanel() {}
+  /// affiche la photo agrémentée des éventuels textes et émojis
+  Widget txtOuEmojiPanel() {
+    return PhotoCanvas(
+      photoFile: _imageFile,
+      photoSize: _photoSize,
+      textsAndEmojis: _textsAndEmojis,
+    );
+  }
 
   Widget enregistrerPanel() {}
 
@@ -839,7 +933,12 @@ class _StepCreationState extends State<StepCreation>
     }
   }
 
-  List<Widget> txtOuEmojiIcons() {}
+  /// les icones pour ajouter texte / émoji
+  List<Widget> txtOuEmojiIcons() {
+    return [
+      addTxtOrEmojiIcon(),
+    ];
+  }
 
   List<Widget> enregistrerIcons() {}
 
@@ -1070,49 +1169,6 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    /// l'event qui remet a zero le state du player
-    /// lorsque un fichier audio vient d'etre joué jusqu'a la fin
-    setCompletionEvent();
-
-    return StreamBuilder<Report>(
-      stream: Global.reportRef
-          .documentStream, // a previously-obtained Future<String> or null
-      builder: (BuildContext context, AsyncSnapshot<Report> snapshot) {
-        Report userReport;
-
-        /// panel is the content between
-        /// the appbar and the bottomappbar.
-        Widget panel;
-
-        /// if we received the userReport
-        if (snapshot.hasData) {
-          userReport = snapshot.data;
-
-          /// it's time to do steps
-          panel = substepPanel(userReport);
-        }
-
-        /// if something got wrong trying
-        /// to get userReport
-        else if (snapshot.hasError) {
-          /// inform the user about it
-          panel = errorMsg();
-        }
-
-        /// if we're loading userReport
-        else {
-          /// tell johnny to wait
-          panel = loadingMsg();
-        }
-
-        /// return the whole screen (appbar + middle + bottomappbar)
-        return wholeScreen(userReport, panel);
-      },
-    );
-  }
-
   /// obtient un string de l'user
   Future<String> getItemName() {
     String title = "Comment s'appelle l'objet ?";
@@ -1255,7 +1311,7 @@ class _StepCreationState extends State<StepCreation>
   /// le nom de l'objet
   Widget itemName(BuildContext context, int index, Report userReport) {
     // le nom de l'item
-    /// 
+    ///
     return Expanded(
       child: Container(
         margin: EdgeInsets.only(
@@ -1338,5 +1394,98 @@ class _StepCreationState extends State<StepCreation>
 
     // puis on met à jour le Report
     userReport.save();
+  }
+
+  /// on peut ajouter text ou emoji
+  Widget addTxtOrEmojiIcon() {
+    return IconButton(
+      iconSize: ITEM_ICON_SIZE,
+      icon: Icon(
+        Icons.add,
+        size: ITEM_ICON_SIZE,
+        color: ITEM_ICON_COLOR,
+      ),
+      onPressed: txtOuEmojiActions,
+    );
+  }
+
+  /// que faire qd on ajoute un text / emoji
+  Widget txtOuEmojiActions() {
+    if (_txtOuEmoji == DRAW_TEXT) {
+      return addTextActions();
+    } else if (_txtOuEmoji == DRAW_EMOJI) {
+      return addEmojiActions();
+    } else {
+      throw Error();
+    }
+  }
+
+  /// ajoutons du texte
+  Widget addTextActions() {
+    /// essayons d'obtenir un texte venant de l'user
+    String title = "Ecris ton texte.";
+    String subtitle = "Ajoute texte ci-dessous";
+    String hint = "Pipi caca etc...";
+
+    Future<String> userInput = getUserInput(
+      context,
+      title,
+      subtitle,
+      hint,
+    );
+  }
+
+  void fnForFutureUserInput(Future<String> userInput) {
+    userInput.then((userInput) {
+      if (userInput == NO_USER_INPUT) {
+        return noText();
+      } else if (userInput == EMPTY_USER_INPUT) {
+        return emptyText();
+      } else if (userInput.length > 0) {
+        return handleText(userInput);
+      } else {
+        throw Error();
+      }
+    });
+  }
+
+  Widget addEmojiActions() {}
+
+  void noText() {
+    String msg = "Creation de texte annulée.";
+    int durationMsec = 2000;
+
+    displaySnackbar(_scaffoldKey, msg, durationMsec);
+  }
+
+  void emptyText() {
+    String msg = "Ecris du texte, s'il te plait.";
+    int durationMsec = 2000;
+
+    displaySnackbar(_scaffoldKey, msg, durationMsec);
+  }
+
+  /// que fait on avec le texte obtenu
+  void handleText(String userInput) {
+    /// on crée un dragbox
+    Offset initPos = Offset(200.0, 200.0);
+    String label = userInput;
+    double fontSize = 25;
+    Color outsideColor = Colors.red;
+    Color insideColor = Colors.white;
+
+    DragBox draggableText = new DragBox(
+      initPos,
+      label,
+      fontSize,
+      outsideColor,
+      insideColor,
+    );
+
+    /// on l'ajoute à la liste de text and drag
+    setState(() {
+      _textsAndEmojis.add(draggableText);    
+    });
+    
   }
 }

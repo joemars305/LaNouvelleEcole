@@ -101,11 +101,10 @@ const STOPPED = 0;
 const PLAYING = 1;
 const PAUSED = 2;
 
-
-/// USER_INPUT_STRING représente 
+/// USER_INPUT_STRING représente
 /// un futur texte provenant
 /// de l'utilisateur
-/// 
+///
 /// null pour NO_USER_INPUT
 /// Future<''> pour EMPTY_USER_INPUT
 /// Future<un String d'une lettre ou plus> pour le reste
@@ -117,3 +116,21 @@ const ITEM_ICON_SIZE = 15.0;
 
 /// la couleur des icones d'un objet
 const ITEM_ICON_COLOR = Colors.white;
+
+/// TXT_OU_EMOJI représente ce qu'on veut afficher
+/// sur la photo d'étape
+///
+/// 0 pour DRAW_TEXT
+/// 1 pour DRAW_EMOJI
+const DRAW_TEXT = 0;
+const DRAW_EMOJI = 1;
+
+/// TEXTS_AND_EMOJIS représente le texte
+/// et les émojis qu'on veut ajouter
+/// sur notre photo pour expliquer des trucs
+///
+/// [] pour NO_TEXTS_AND_EMOJIS
+/// List<DragBox> autrement
+const NO_TEXTS_AND_EMOJIS = [];
+
+

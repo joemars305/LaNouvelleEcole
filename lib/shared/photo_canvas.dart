@@ -11,9 +11,14 @@ class PhotoCanvas extends StatelessWidget {
   // la taille de la photo
   final int photoSize;
 
+  // les trucs drag and drop (text emojis etc...)
+  final List<DragBox> textsAndEmojis;
+
   PhotoCanvas({
     Key key,
-    this.photoFile, this.photoSize,
+    this.photoFile, 
+    this.photoSize,
+    this.textsAndEmojis,
   }) : super(key: key);
 
   // affiche la photo sur toute la surface disponible
@@ -107,10 +112,12 @@ class PhotoCanvas extends StatelessWidget {
     // photo, texte, émoji, etc...
     List<Widget> elements = [];
 
-    //print(photoFile);
+    /// ajoute les texts et emojis etc...
+    /// drag and drop
+    elements = elements + textsAndEmojis;
 
     // si il n'y a pas de photo disponible
-    if (photoFile == null) {
+    if (photoFile == NO_PHOTO) {
       // affichons le message sur fond jaune
       // invitant l'user à prendre une photo
       elements.add(takePhotoMsg());
