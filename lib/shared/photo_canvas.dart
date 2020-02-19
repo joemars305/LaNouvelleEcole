@@ -12,43 +12,55 @@ class PhotoCanvas extends StatelessWidget {
   final int photoSize;
 
   // les trucs drag and drop (text emojis etc...)
-  final List<DragBox> textsAndEmojis;
+  final List<Widget> textsAndEmojis;
+
+  // le texte a display qd ya pas de photo
+  final String noPhotoText;
 
   PhotoCanvas({
     Key key,
-    this.photoFile, 
+    this.photoFile,
     this.photoSize,
     this.textsAndEmojis,
+    this.noPhotoText,
   }) : super(key: key);
 
   // affiche la photo sur toute la surface disponible
-  // 
+  //
   Widget photo() {
-    return //Positioned.fill(
-      //child: 
-      Padding(
-        padding: EdgeInsets.all(paddedOrNot(photoSize)),
-        child: Container(
-          
-          decoration: BoxDecoration(
-            //border: Border.all(color: Colors.red, width: 2.0),
-            image: DecorationImage(
-              image: FileImage(photoFile),
-              fit: howFitIsPhoto(photoSize),
-            ),
+    return Padding(
+      padding: paddedOrNot(photoSize),
+      child: Center(
+        child: FadeInImage(
+          placeholder: AssetImage("assets/icon.png"),
+          image: FileImage(photoFile),
+          fit: howFitIsPhoto(photoSize),
+        ),
+      ),
+      //),
+    );
+
+    /*Padding(
+      padding: EdgeInsets.all(8.0),
+      child: Container(
+        decoration: BoxDecoration(
+          //border: Border.all(color: Colors.red, width: 2.0),
+          image: DecorationImage(
+            image: FileImage(photoFile),
+            fit: howFitIsPhoto(photoSize),
           ),
         ),
-      );//,
-//);
+      ),
+    );*/
   }
 
   /// if we're in full screen mode
   /// no padding, otherwise some padding
-  double paddedOrNot(int photoSize) {
+  EdgeInsets paddedOrNot(int photoSize) {
     if (photoSize == NORMAL_SIZE) {
-      return 8.0;
+      return EdgeInsets.all(8.0);
     } else if (photoSize == FULL_SIZE) {
-      return 0.0;
+      return EdgeInsets.all(0.0);
     } else {
       throw Error();
     }
@@ -81,7 +93,7 @@ class PhotoCanvas extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(80.0, 30.0, 80.0, 0.0),
       child: Text(
-        "Appuie sur l'appareil photo pour prendre une photo",
+        noPhotoText,
         textAlign: TextAlign.center,
       ),
     );
@@ -105,29 +117,33 @@ class PhotoCanvas extends StatelessWidget {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     // contient tous les éléments de la zone photo
     // photo, texte, émoji, etc...
     List<Widget> elements = [];
 
-    /// ajoute les texts et emojis etc...
-    /// drag and drop
-    elements = elements + textsAndEmojis;
+    
 
     // si il n'y a pas de photo disponible
     if (photoFile == NO_PHOTO) {
       // affichons le message sur fond jaune
       // invitant l'user à prendre une photo
       elements.add(takePhotoMsg());
-    } 
+    }
+
     /// si il y a une photo dispo
     else {
       /// affiche cette photo
       elements.add(photo());
     }
 
+    /// ajoute les texts et emojis etc...
+    /// drag and drop
+    elements += textsAndEmojis;
+
+    print(elements);
+    
     /// nous allons afficher ceci en tant que Stack
     return Stack(
       children: elements,

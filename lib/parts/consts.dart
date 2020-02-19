@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'drag_box.dart';
+
 /// PHOTO_SIZE représente la taille
 /// de la photo de l'étape.
 ///
@@ -36,11 +38,11 @@ const MSG_AUDIO = 1;
 /// représente l'étape INVENTAIRE
 const INVENTAIRE = 2;
 
-/// represente l'etape TEXTE OU EMOJI
-const TEXTE_OU_EMOJI = 3;
+/// represente l'etape UPLOAD_PHOTO
+const UPLOAD_PHOTO = 3;
 
-/// represente l'etape enregistre sur internet
-const ENREGISTRER = 4;
+/// represente l'etape UPLOAD_AUDIO
+const UPLOAD_AUDIO = 4;
 
 /// IS_RECORDING représente si on est en train, ou pas,
 /// d'enregistrer un message audio
@@ -131,6 +133,8 @@ const DRAW_EMOJI = 1;
 ///
 /// [] pour NO_TEXTS_AND_EMOJIS
 /// List<DragBox> autrement
-const NO_TEXTS_AND_EMOJIS = [];
 
+
+/// TAILLE DES ICONES DU BOTTOM BAR
+const BOTTOM_ICON_SIZE = 30.0;
 

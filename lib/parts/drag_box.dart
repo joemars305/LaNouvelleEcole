@@ -17,7 +17,7 @@ class DragBox extends StatefulWidget {
 }
 
 class DragBoxState extends State<DragBox> {
-  Offset position = Offset(0.0, 0.0);
+  Offset position = Offset(300.0, 300.0);
   double width = 150;
   double fontSize = 15.0;
   String text = "";
@@ -37,6 +37,12 @@ class DragBoxState extends State<DragBox> {
     print("y: " + position.dy.toString());
 
     var textWidth = 250.0;
+
+    /// la taille de la barre en haut
+    var topBarHeight = AppBar().preferredSize.height;
+
+    ///
+    var actionBarHeight = MediaQuery.of(context).padding.top;
 
     return Positioned(
       left: position.dx,

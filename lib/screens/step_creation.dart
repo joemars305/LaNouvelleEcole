@@ -124,8 +124,8 @@ class _StepCreationState extends State<StepCreation>
   /// 0 pour PRENDRE_PHOTO
   /// 1 pour MSG_AUDIO
   /// 2 pour INVENTAIRE
-  /// 3 pour TEXTE_OU_EMOJI
-  /// 4 pour ENREGISTRER
+  /// 3 pour UPLOAD_PHOTO
+  /// 4 pour UPLOAD_AUDIO
   int sous_etape = PRENDRE_PHOTO;
 
   /// FONCTION
@@ -140,11 +140,11 @@ class _StepCreationState extends State<StepCreation>
       return msgAudio();
     } 
     
-    else if (sous_etape == TEXTE_OU_EMOJI) {
+    else if (sous_etape == UPLOAD_PHOTO) {
       return txtOuEmoji();
     }
 
-    else if (sous_etape == ENREGISTRER) {
+    else if (sous_etape == UPLOAD_AUDIO) {
       return enregistrer();
     }
 
@@ -330,9 +330,9 @@ class _StepCreationState extends State<StepCreation>
   /// sur notre photo pour expliquer des trucs
   ///
   /// [] pour NO_TEXTS_AND_EMOJIS
-  /// List<DragBox> autrement
+  /// List<Widget> autrement
   ///
-  List<DragBox> _textsAndEmojis = NO_TEXTS_AND_EMOJIS;
+  List<Widget> _textsAndEmojis = [];
 
   /*
   fn() {
@@ -360,13 +360,14 @@ class _StepCreationState extends State<StepCreation>
   /// la bottom bar
   Widget substepPanel(Report userReport) {
     if (sous_etape == PRENDRE_PHOTO) {
-      return prendrePhotoPanel();
+      
+      return prendrePhotoPanel("Appuie sur l'appareil photo pour prendre une photo.");
     } else if (sous_etape == MSG_AUDIO) {
       return msgAudioPanel();
-    } else if (sous_etape == TEXTE_OU_EMOJI) {
-      return txtOuEmojiPanel();
-    } else if (sous_etape == ENREGISTRER) {
-      return enregistrerPanel();
+    } else if (sous_etape == UPLOAD_PHOTO) {
+      return uploadPhotoPanel();
+    } else if (sous_etape == UPLOAD_AUDIO) {
+      return uploadAudioPanel();
     } else if (sous_etape == INVENTAIRE) {
       return inventairePanel(userReport);
     } else {
@@ -375,11 +376,16 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /// permet de voir la photo qu'on a prise
-  Widget prendrePhotoPanel() {
+  Widget prendrePhotoPanel(String msg) {
+    int durationMsec = 2000;
+
+    //displaySnackbar(_scaffoldKey, msg, durationMsec);
+
     return PhotoCanvas(
       photoFile: _imageFile, 
       photoSize: _photoSize,
       textsAndEmojis: _textsAndEmojis,
+      noPhotoText: msg,
     );
   }
 
@@ -399,11 +405,29 @@ class _StepCreationState extends State<StepCreation>
 
   /// pas d'enregistrement, donc photo
   Widget noRecordingAudioPanel() {
-    return prendrePhotoPanel();
+    String msg = noRecordingMsg();
+    
+    return prendrePhotoPanel(msg);
+  }
+
+  /// quel instructions donner a l'user durant étape audio
+  String noRecordingMsg() {
+    if (_recording == NO_AUDIO_FILE) {
+      return "Appuie sur le micro pour enregistrer un message audio.";
+    }
+
+    else {
+      return "Appuie sur l'icone play pour écouter le message audio.";
+    }
   }
 
   /// enregistrement, donc countdown
   Widget recordingAudioPanel() {
+    int durationMsec = 2000;
+    String msg = "Appuie sur le carré 'stop' pour arrêter l'enregistrement audio.";
+
+    //displaySnackbar(_scaffoldKey, msg, durationMsec);
+
     return circularCountdown();
   }
 
@@ -503,23 +527,34 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  /// affiche la photo agrémentée des éventuels textes et émojis
-  Widget txtOuEmojiPanel() {
+  /// 
+  Widget uploadPhotoPanel() {
+    String msg = "Appuie sur + pour ajouter du texte / émoji descriptif a l'écran";
+    int durationMsec = 2000;
+
+    //displaySnackbar(_scaffoldKey, msg, durationMsec);
+
     return PhotoCanvas(
+      noPhotoText: msg,
       photoFile: _imageFile,
       photoSize: _photoSize,
       textsAndEmojis: _textsAndEmojis,
     );
   }
 
-  Widget enregistrerPanel() {}
+  Widget uploadAudioPanel() {
+
+  }
 
   /// l'inventaire d'objets
   Widget inventairePanel(Report userReport) {
     /// combien d'items individuels existent dans l'inventaire ?
     int qtyItems = userReport.getLatestBabyLessonSeen().items.length;
 
-    print(userReport.getLatestBabyLessonSeen().items);
+    String msg = "Appuie sur + pour ajouter un objet dans ton inventaire.";
+    int durationMsec = 2000;
+
+    //displaySnackbar(_scaffoldKey, msg, durationMsec);
 
     /// si il y aucun items dans l'inventaire
     /// affiche un message invitant user
@@ -743,7 +778,7 @@ class _StepCreationState extends State<StepCreation>
     return IconButton(
       icon: Icon(
         Icons.play_arrow,
-        size: 30,
+        size: BOTTOM_ICON_SIZE,
       ),
       onPressed: playIconActions,
       color: Colors.blue,
@@ -755,7 +790,7 @@ class _StepCreationState extends State<StepCreation>
     return IconButton(
       icon: Icon(
         Icons.pause,
-        size: 30,
+        size: BOTTOM_ICON_SIZE,
       ),
       onPressed: pauseIconActions,
       color: Colors.blue,
@@ -767,7 +802,7 @@ class _StepCreationState extends State<StepCreation>
     return IconButton(
       icon: Icon(
         Icons.play_arrow,
-        size: 30,
+        size: BOTTOM_ICON_SIZE,
       ),
       onPressed: resumeIconActions,
       color: Colors.blue,
@@ -847,7 +882,7 @@ class _StepCreationState extends State<StepCreation>
     return IconButton(
       icon: Icon(
         Icons.mic,
-        size: 30,
+        size: BOTTOM_ICON_SIZE,
       ),
       onPressed: letsRecordActions,
       color: Colors.blue,
@@ -859,7 +894,7 @@ class _StepCreationState extends State<StepCreation>
     return IconButton(
       icon: Icon(
         Icons.stop,
-        size: 30,
+        size: BOTTOM_ICON_SIZE,
       ),
       onPressed: stopRecordActions,
       color: Colors.blue,
@@ -970,7 +1005,7 @@ class _StepCreationState extends State<StepCreation>
     return IconButton(
       icon: Icon(
         Icons.add,
-        size: 30,
+        size: BOTTOM_ICON_SIZE,
       ),
       onPressed: () {
         addItemActions(userReport);
@@ -1023,7 +1058,7 @@ class _StepCreationState extends State<StepCreation>
     return IconButton(
       icon: Icon(
         Icons.photo_camera,
-        size: 30,
+        size: BOTTOM_ICON_SIZE,
       ),
       onPressed: () => _pickImage(ImageSource.camera),
       color: Colors.blue,
@@ -1036,7 +1071,7 @@ class _StepCreationState extends State<StepCreation>
     return IconButton(
       icon: Icon(
         Icons.photo_library,
-        size: 30,
+        size: BOTTOM_ICON_SIZE,
       ),
       onPressed: () => _pickImage(ImageSource.gallery),
       color: Colors.pink,
@@ -1079,7 +1114,7 @@ class _StepCreationState extends State<StepCreation>
     return IconButton(
       icon: Icon(
         icon,
-        size: 30,
+        size: BOTTOM_ICON_SIZE,
       ),
       onPressed: fn,
       color: Colors.pink,
@@ -1402,8 +1437,8 @@ class _StepCreationState extends State<StepCreation>
       iconSize: ITEM_ICON_SIZE,
       icon: Icon(
         Icons.add,
-        size: ITEM_ICON_SIZE,
-        color: ITEM_ICON_COLOR,
+        size: BOTTOM_ICON_SIZE,
+        color: Colors.pink,
       ),
       onPressed: txtOuEmojiActions,
     );
@@ -1433,17 +1468,28 @@ class _StepCreationState extends State<StepCreation>
       subtitle,
       hint,
     );
+
+    handleFutureText(userInput);
   }
 
-  void fnForFutureUserInput(Future<String> userInput) {
+  /// une fois l'input user reçu,
+  /// faisons qqch avec
+  void handleFutureText(Future<String> userInput) {
     userInput.then((userInput) {
+      /// 
       if (userInput == NO_USER_INPUT) {
         return noText();
-      } else if (userInput == EMPTY_USER_INPUT) {
+      } 
+      
+      else if (userInput == EMPTY_USER_INPUT) {
         return emptyText();
-      } else if (userInput.length > 0) {
+      } 
+      
+      else if (userInput.length > 0) {
         return handleText(userInput);
-      } else {
+      } 
+      
+      else {
         throw Error();
       }
     });
@@ -1468,7 +1514,7 @@ class _StepCreationState extends State<StepCreation>
   /// que fait on avec le texte obtenu
   void handleText(String userInput) {
     /// on crée un dragbox
-    Offset initPos = Offset(200.0, 200.0);
+    Offset initPos = Offset(250.0, 250.0);
     String label = userInput;
     double fontSize = 25;
     Color outsideColor = Colors.red;
