@@ -10,6 +10,18 @@ import 'package:quizapp/parts/parts.dart';
 /// Future<un String d'une lettre ou plus> pour le reste
 
 /*
+Future<String> userInput = getUserInput(
+  context,
+  title,
+  subtitle, 
+  hint,
+);
+
+fnForFutureUserInput(userInput);
+
+....
+....
+
 void fnForFutureUserInput(Future<String> userInput) {
   userInput.then((userInput) {
     if (userInput == NO_USER_INPUT) {
@@ -51,7 +63,9 @@ Future<String> getUserInput(
   String subtitle,
   String hint,
 ) async {
+  
   String inputText = '';
+
   return showDialog<String>(
     context: context,
     barrierDismissible:
@@ -68,6 +82,11 @@ Future<String> getUserInput(
                   new InputDecoration(labelText: subtitle, hintText: hint),
               onChanged: (value) {
                 inputText = value;
+              },
+              onSubmitted: (value) {
+                print('give user input back: ' + inputText);
+
+                Navigator.of(context).pop(inputText);
               },
             ))
           ],
@@ -118,6 +137,17 @@ void displaySnackbar(
 /// Future<Choice> autrement
 
 /*
+Future<Choice> userChoice = getUserChoice(
+  context,
+  title,
+  choices,
+);
+
+fnForFutureChoice(userChoice);
+
+....
+....
+
 void fnForFutureChoice(Future<Choice> futureChoice) {
   futureChoice.then((choice) {
     if (choice == NO_FUTURE_CHOICE) {
@@ -170,7 +200,7 @@ List makeChoicesList(BuildContext context, List<Choice> choices) {
 /// crée un choix individuel cliquable
 SimpleDialogOption handleChoice(BuildContext context, Choice choice) {
   String choiceDesc = choice.choiceDescription;
-  int choiceVal = choice.choiceValue;
+  //int choiceVal = choice.choiceValue;
 
   return SimpleDialogOption(
     onPressed: () {

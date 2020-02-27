@@ -1,12 +1,36 @@
-import 'dart:io';
+
 import 'package:flutter/material.dart';
-//import 'package:quizapp/services/services.dart';
 import 'package:quizapp/parts/parts.dart';
+
+/// PHOTO_URL représente
+/// le moyen d'affichage de photo
+/// via file ou via url
+///
+/// null pour NO_PHOTO_URL
+/// String autrement
+
+/*
+photoUrl() {
+  if (photoUrl == NO_PHOTO_URL) {
+    return noUrl();
+  }
+
+  else if (photoUrl is String &&
+           photoUrl.length > 0) {
+    return url();
+  }
+
+  else {
+    throw Error();
+  }
+ 
+}
+*/
 
 /// contient la photo de l'étape, et les différents
 /// textes et émojis
 class PhotoCanvas extends StatelessWidget {
-  final File photoFile;
+  final dynamic photoFile;
 
   // la taille de la photo
   final int photoSize;
@@ -17,13 +41,23 @@ class PhotoCanvas extends StatelessWidget {
   // le texte a display qd ya pas de photo
   final String noPhotoText;
 
+  /// si photo uploadée, l'url
+  final String photoUrl;
+
   PhotoCanvas({
     Key key,
     this.photoFile,
     this.photoSize,
     this.textsAndEmojis,
     this.noPhotoText,
+    this.photoUrl,
   }) : super(key: key);
+
+  nyanCat() {
+    return AssetImage(
+      'assets/nyan.gif',
+    );
+  }
 
   // affiche la photo sur toute la surface disponible
   //
@@ -32,26 +66,30 @@ class PhotoCanvas extends StatelessWidget {
       padding: paddedOrNot(photoSize),
       child: Center(
         child: FadeInImage(
-          placeholder: AssetImage("assets/icon.png"),
-          image: FileImage(photoFile),
+          placeholder: nyanCat(),
+          image: imageUrlOrFile(),
           fit: howFitIsPhoto(photoSize),
         ),
       ),
       //),
     );
+  }
 
-    /*Padding(
-      padding: EdgeInsets.all(8.0),
-      child: Container(
-        decoration: BoxDecoration(
-          //border: Border.all(color: Colors.red, width: 2.0),
-          image: DecorationImage(
-            image: FileImage(photoFile),
-            fit: howFitIsPhoto(photoSize),
-          ),
-        ),
-      ),
-    );*/
+  /// returns first the local photo,
+  /// if there's one,
+  /// or the uploaded photo
+  imageUrlOrFile() {
+    if (photoFile != NO_PHOTO) {
+      return fileImage();
+    }
+
+    else if (photoUrl != NO_PHOTO_URL) {
+      return networkImage();
+    } 
+    
+    else {
+      throw Error();
+    }
   }
 
   /// if we're in full screen mode
@@ -123,10 +161,9 @@ class PhotoCanvas extends StatelessWidget {
     // photo, texte, émoji, etc...
     List<Widget> elements = [];
 
-    
-
-    // si il n'y a pas de photo disponible
-    if (photoFile == NO_PHOTO) {
+    // si il n'y a pas de photo disponible,
+    // ni localement, ni uploadée
+    if (photoFile == NO_PHOTO && photoUrl == NO_PHOTO_URL) {
       // affichons le message sur fond jaune
       // invitant l'user à prendre une photo
       elements.add(takePhotoMsg());
@@ -143,10 +180,18 @@ class PhotoCanvas extends StatelessWidget {
     elements += textsAndEmojis;
 
     print(elements);
-    
+
     /// nous allons afficher ceci en tant que Stack
     return Stack(
       children: elements,
     );
+  }
+
+  networkImage() {
+    return NetworkImage(photoUrl);
+  }
+
+  fileImage() {
+    return FileImage(photoFile);
   }
 }

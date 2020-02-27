@@ -1,17 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:quizapp/parts/parts.dart';
 import 'package:quizapp/services/services.dart';
 
-/** 
- * Tout le trala 
- * ci-dessous a pour but
- * de nous permettre
- * d'utiliser les données de la 
- * base de donnée firestore
- * en format Dart Class au lieu 
- * d'un objet key: value
- * 
- * AVANTAGES: code + lisible, etc...
- */
+
 
 
 
@@ -88,11 +79,7 @@ class Topic {
 }
 
 
-/**
- * Un dossier contenant entre autres 
- * les bébé tutoriels
- * de l'utilisateur
- */
+ 
 class Report {
   String uid;
   int total;
@@ -169,6 +156,28 @@ class BabyLesson {
     );
   }
 
+  Future deleteLessonData() async {
+    return steps.map((step) async {
+      
+      var photopath = step.photoFilePath;
+      var audiopath = step.audioFilePath;
+
+      var _storage = FirebaseStorage(
+        storageBucket: storageBucketUri,
+      );
+
+      print('photo path during deletion');
+      print(photopath);
+
+      print('audio path during deletion');
+      print(audiopath);
+
+      await _storage.ref().child(audiopath).delete();
+      
+      return await _storage.ref().child(photopath).delete();
+    });
+  }
+
   LessonStep getCurrentStep() {
     return steps[currentStep];
   }
@@ -190,35 +199,49 @@ class BabyLesson {
 }
 
 
+
+
 class LessonStep {
-  String audioPath;
-  String localPhotoPath;
+  String audioFilePath;
+  String audioFileUrl;
+  String photoFilePath;
+  String photoFileUrl;
   int currentSubstep;
 
 
   
 
-  LessonStep({ this.audioPath, this.localPhotoPath, this.currentSubstep });
+  LessonStep({ 
+    this.audioFilePath,
+    this.audioFileUrl,
+    this.photoFilePath,
+    this.photoFileUrl, 
+    this.currentSubstep, 
+  });
 
 
   factory LessonStep.fromMap(Map data) {
     return LessonStep(
-      audioPath: data['audioPath'] ?? null,
-      localPhotoPath: data['localPhotoPath'] ?? null,
+      audioFilePath: data['audioFilePath'] ?? null,
+      photoFilePath: data['photoFilePath'] ?? null,
+      audioFileUrl: data['audioFileUrl'] ?? null,
+      photoFileUrl: data['photoFileUrl'] ?? null,
       currentSubstep: data['currentSubstep'] ?? 0,
     );
   }
 
   Map toMap() {
     return {
-      'audioPath': audioPath ?? null,
-      'localPhotoPath': localPhotoPath ?? null,
+      'audioFilePath': audioFilePath ?? null,
+      'photoFilePath': photoFilePath ?? null,
+      'audioFileUrl': audioFileUrl ?? null,
+      'photoFileUrl': photoFileUrl ?? null,
       'currentSubstep': currentSubstep ?? 0,
     };
   }
 
   bool photoTaken() {
-    return localPhotoPath != null;
+    return photoFilePath != null;
   }
 }
 

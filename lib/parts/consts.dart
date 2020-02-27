@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'drag_box.dart';
 
 /// PHOTO_SIZE représente la taille
 /// de la photo de l'étape.
@@ -32,17 +31,21 @@ const howManySubsteps = 5;
 /// represente l'etape prendre une photo
 const PRENDRE_PHOTO = 0;
 
+/// représente l'étape text et emoji
+const TEXT_EMOJI = 2;
+
 /// represente l'etape MESSAGE AUDIO
 const MSG_AUDIO = 1;
 
+
 /// représente l'étape INVENTAIRE
-const INVENTAIRE = 2;
+const INVENTAIRE = 3;
 
 /// represente l'etape UPLOAD_PHOTO
-const UPLOAD_PHOTO = 3;
+const UPLOAD_FILES = 4;
 
 /// represente l'etape UPLOAD_AUDIO
-const UPLOAD_AUDIO = 4;
+//const UPLOAD_AUDIO = 5;
 
 /// IS_RECORDING représente si on est en train, ou pas,
 /// d'enregistrer un message audio
@@ -134,7 +137,106 @@ const DRAW_EMOJI = 1;
 /// [] pour NO_TEXTS_AND_EMOJIS
 /// List<DragBox> autrement
 
-
 /// TAILLE DES ICONES DU BOTTOM BAR
 const BOTTOM_ICON_SIZE = 30.0;
 
+/// UPLOAD_TASK représente l"upload d'un fichier vers
+/// le cloud Firebase
+///
+/// null pour NO_UPLOAD_TASK (pas d'upload en cours)
+/// un StorageUploadTask autrement (un upload est en cours/pause/terminé)
+const NO_UPLOAD_TASK = null;
+
+/// UPLOAD_STATUS représente l'état actuel du
+/// Uploader existant
+///
+/// 0 pour UP_IN_PROGRESS
+/// 1 pour UP_PAUSED
+/// 2 pour UP_COMPLETED
+
+/*
+fnForUpStatus() {
+  if (_uploadTask.isInProgress) {
+    return UP_IN_PROGRESS;
+  }
+
+  else if (_uploadTask.isPaused) {
+    return UP_PAUSED;
+  }
+
+  else if (_uploadTask.isComplete) {
+    return UP_COMPLETED;
+  }
+}
+*/
+const UP_IN_PROGRESS = 0;
+const UP_PAUSED = 1;
+const UP_COMPLETED = 2;
+
+/// CREATE_UPLOAD représente si on demarre l'upload
+///
+/// false pour DONT_CREATE_UP
+/// true pour CREATE_UP
+const DONT_CREATE_UP = false;
+const CREATE_UP = true;
+
+
+
+
+/// PHOTO_PATH représente le chemin
+/// vers la photo, dans firebase storage
+/// 
+/// null pour NO_PHOTO_PATH
+/// String autrement
+const NO_PHOTO_PATH = null;
+
+/*
+fnForPhotoPath(String photoPath) {
+  if (_photoPath == NO_PHOTO_PATH) {
+    return noPhotoPath();
+  }
+
+  else if (photoPath.length > 0) {
+
+  }
+
+  else {
+    throw Error();
+  }
+}
+*/
+
+/// l'uri du storage bucket de firebase
+const storageBucketUri = 'gs://la-nouvelle-ecole-7e29b.appspot.com';
+
+
+/// PHOTO_URL représente
+/// le moyen d'affichage de photo
+/// via file ou via url
+/// 
+/// null pour NO_PHOTO_URL
+/// String autrement
+
+/*
+photoUrl() {
+  if (photoUrl == NO_PHOTO_URL) {
+    return noUrl();
+  }
+
+  else if (photoUrl is String &&
+           photoUrl.length > 0) {
+    return url();
+  }
+
+  else {
+    throw Error();
+  }
+}
+*/
+const NO_PHOTO_URL = null;
+
+/// no data available
+const NO_DATA = null;
+
+
+const List<Widget> NO_TEXTS_AND_EMOJIS = [];

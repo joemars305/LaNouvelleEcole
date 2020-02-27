@@ -56,7 +56,7 @@ class Collection<T> {
 
 
 class UserData<T> {
-  final Firestore _db = Firestore.instance;
+  //final Firestore _db = Firestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final String collection;
 

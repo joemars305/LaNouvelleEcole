@@ -1,7 +1,25 @@
-import 'dart:io';
+///
+///
+/// - ajoute étape text et émojis
+/// avant étape upload photo.
+/// on veut pouvoir ajouter texte ou émoji,
+/// puis sauvegarder résultat local.
+///
+/// - ajouter 2 boutons étap préc et étap suiv
+/// a la place des 2 flèches actuelles
+///
+/// - ajouter bouton terminer qui propose 2 choix.
+///
+/// - soit on supprime l'étape
+///
+/// - soit on termine la leçon
 
+import 'dart:io';
+import 'dart:ui';
 import 'package:audio_recorder/audio_recorder.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quizapp/parts/parts.dart';
@@ -9,6 +27,7 @@ import 'package:quizapp/services/services.dart';
 import 'package:quizapp/shared/photo_canvas.dart';
 import 'package:file/local.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../parts/consts.dart';
 import '../parts/parts.dart';
@@ -75,6 +94,9 @@ class _StepCreationState extends State<StepCreation>
   /// nous permet d'afficher des snackbar
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  /// nous permet de sauvegarder la zone photo
+  final _canvasKey = GlobalKey();
+
   /// convertit le temps restant
   /// de l'enregistrement audio (Duration) en cours,
   /// en format mm:ss (string)
@@ -122,33 +144,34 @@ class _StepCreationState extends State<StepCreation>
   /// SOUS_ETAPES represente l'etape actuelle
   ///
   /// 0 pour PRENDRE_PHOTO
-  /// 1 pour MSG_AUDIO
-  /// 2 pour INVENTAIRE
-  /// 3 pour UPLOAD_PHOTO
-  /// 4 pour UPLOAD_AUDIO
-  int sous_etape = PRENDRE_PHOTO;
+  /// 1 pour TEXT_ET_EMOJI
+  /// 2 pour MSG_AUDIO
+  /// 3 pour INVENTAIRE
+  /// 4 pour UPLOAD_PHOTO
+  /// 5 pour UPLOAD_AUDIO
+  int sousEtape = PRENDRE_PHOTO;
 
   /// FONCTION
   /*
 
   Widget fnForSousEtape() {
-    if (sous_etape == PRENDRE_PHOTO) {
+    if (sousEtape == PRENDRE_PHOTO) {
       return prendrePhoto();
     } 
     
-    else if (sous_etape == MSG_AUDIO) {
+    else if (sousEtape == MSG_AUDIO) {
       return msgAudio();
     } 
     
-    else if (sous_etape == UPLOAD_PHOTO) {
+    else if (sousEtape == UPLOAD_PHOTO) {
       return txtOuEmoji();
     }
 
-    else if (sous_etape == UPLOAD_AUDIO) {
+    else if (sousEtape == UPLOAD_AUDIO) {
       return enregistrer();
     }
 
-    else if (sous_etape == INVENTAIRE) {
+    else if (sousEtape == INVENTAIRE) {
       return inventaire();
     }
 
@@ -307,7 +330,7 @@ class _StepCreationState extends State<StepCreation>
   ///
   /// 0 pour DRAW_TEXT
   /// 1 pour DRAW_EMOJI
-  int _txtOuEmoji = DRAW_TEXT;
+  //int _txtOuEmoji = DRAW_TEXT;
 
   /*
   Widget txtOuEmoji() {
@@ -346,6 +369,33 @@ class _StepCreationState extends State<StepCreation>
   }
   */
 
+  /// CREATE_UPLOAD représente si on demarre l'upload
+  ///
+  /// false pour DONT_CREATE_UP
+  /// true pour CREATE_UP
+  bool _createUpload = DONT_CREATE_UP;
+
+  /*
+  fnForStartUpload() {
+    if (_createUpload == DONT_CREATE_UP) {
+      return dontStartUp();
+    }
+
+    else if (_createUpload == CREATE_UP) {
+      return startUp();
+    }
+
+    else {
+      throw Error();
+    }
+  }
+  */
+
+  /// nous permet de supprimer une photo
+  /// stockée dans firebase storage
+  final FirebaseStorage _storage =
+      FirebaseStorage(storageBucket: storageBucketUri);
+
   /// l'event qui remet a zero le state du player
   /// lorsque un fichier audio vient d'etre joué jusqu'a la fin
   void setCompletionEvent() {
@@ -359,16 +409,16 @@ class _StepCreationState extends State<StepCreation>
   /// quel contenu doit on afficher entre la top bar et
   /// la bottom bar
   Widget substepPanel(Report userReport) {
-    if (sous_etape == PRENDRE_PHOTO) {
-      
-      return prendrePhotoPanel("Appuie sur l'appareil photo pour prendre une photo.");
-    } else if (sous_etape == MSG_AUDIO) {
-      return msgAudioPanel();
-    } else if (sous_etape == UPLOAD_PHOTO) {
-      return uploadPhotoPanel();
-    } else if (sous_etape == UPLOAD_AUDIO) {
-      return uploadAudioPanel();
-    } else if (sous_etape == INVENTAIRE) {
+    if (sousEtape == PRENDRE_PHOTO) {
+      return prendrePhotoPanel(
+          userReport, "Appuie sur l'appareil photo pour prendre une photo.");
+    } else if (sousEtape == MSG_AUDIO) {
+      return msgAudioPanel(userReport);
+    } else if (sousEtape == TEXT_EMOJI) {
+      return txtEmojiPanel(userReport);
+    } else if (sousEtape == UPLOAD_FILES) {
+      return uploadFilesPanel(userReport);
+    }  else if (sousEtape == INVENTAIRE) {
       return inventairePanel(userReport);
     } else {
       throw Error();
@@ -376,16 +426,18 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /// permet de voir la photo qu'on a prise
-  Widget prendrePhotoPanel(String msg) {
-    int durationMsec = 2000;
+  Widget prendrePhotoPanel(Report userReport, String msg) {
 
-    //displaySnackbar(_scaffoldKey, msg, durationMsec);
-
-    return PhotoCanvas(
-      photoFile: _imageFile, 
-      photoSize: _photoSize,
-      textsAndEmojis: _textsAndEmojis,
-      noPhotoText: msg,
+    return RepaintBoundary(
+      key: _canvasKey,
+      child: PhotoCanvas(
+        photoFile: _imageFile,
+        photoSize: _photoSize,
+        textsAndEmojis: _textsAndEmojis,
+        noPhotoText: msg,
+        photoUrl:
+            userReport.getLatestBabyLessonSeen().getCurrentStep().photoFileUrl,
+      ),
     );
   }
 
@@ -393,9 +445,9 @@ class _StepCreationState extends State<StepCreation>
   /// on affiche prendrePhotoPanel(),
   /// sinon on affiche un compte à rebours
   /// en forme de cercle
-  Widget msgAudioPanel() {
+  Widget msgAudioPanel(Report userReport) {
     if (_isRecording == NO_RECORD) {
-      return noRecordingAudioPanel();
+      return noRecordingAudioPanel(userReport);
     } else if (_isRecording == WE_RECORD) {
       return recordingAudioPanel();
     } else {
@@ -404,29 +456,24 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /// pas d'enregistrement, donc photo
-  Widget noRecordingAudioPanel() {
+  Widget noRecordingAudioPanel(Report userReport) {
     String msg = noRecordingMsg();
-    
-    return prendrePhotoPanel(msg);
+
+    return prendrePhotoPanel(userReport, msg);
   }
 
   /// quel instructions donner a l'user durant étape audio
   String noRecordingMsg() {
     if (_recording == NO_AUDIO_FILE) {
       return "Appuie sur le micro pour enregistrer un message audio.";
-    }
-
-    else {
+    } else {
       return "Appuie sur l'icone play pour écouter le message audio.";
     }
   }
 
   /// enregistrement, donc countdown
   Widget recordingAudioPanel() {
-    int durationMsec = 2000;
-    String msg = "Appuie sur le carré 'stop' pour arrêter l'enregistrement audio.";
-
-    //displaySnackbar(_scaffoldKey, msg, durationMsec);
+    
 
     return circularCountdown();
   }
@@ -527,23 +574,43 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  /// 
-  Widget uploadPhotoPanel() {
-    String msg = "Appuie sur + pour ajouter du texte / émoji descriptif a l'écran";
-    int durationMsec = 2000;
-
-    //displaySnackbar(_scaffoldKey, msg, durationMsec);
-
-    return PhotoCanvas(
-      noPhotoText: msg,
-      photoFile: _imageFile,
-      photoSize: _photoSize,
-      textsAndEmojis: _textsAndEmojis,
+  ///
+  Widget uploadFilesPanel(Report userReport) {
+    return Uploader(
+      files: [
+        _imageFile, 
+        File(_recording.path)
+      ],
+      userReport: userReport,
+      uploadMsgs: [
+        "Upload de photo en cours...", 
+        "Upload de message audio en cours..."
+      ],
+      onUploadsDone: [
+        afterPhotoUploaded, 
+        afterAudioUploaded
+      ],
     );
   }
 
-  Widget uploadAudioPanel() {
 
+
+  afterAudioUploaded(String newFilePath, String fileUrl, Report userReport) {
+    /// if there's an existing photo path,
+    /// delete the photo at that path in firebase,
+    /// and store the new path,
+    ///
+    /// otherwise just store the new path
+    storeNewAudioFilePath(newFilePath, fileUrl, userReport);
+
+    /// save the data
+    //userReport.save();
+
+    /// reset button so we
+    /// can upload a new photo
+    /*setState(() {
+            _createUpload = DONT_CREATE_UP;
+          });*/
   }
 
   /// l'inventaire d'objets
@@ -551,10 +618,6 @@ class _StepCreationState extends State<StepCreation>
     /// combien d'items individuels existent dans l'inventaire ?
     int qtyItems = userReport.getLatestBabyLessonSeen().items.length;
 
-    String msg = "Appuie sur + pour ajouter un objet dans ton inventaire.";
-    int durationMsec = 2000;
-
-    //displaySnackbar(_scaffoldKey, msg, durationMsec);
 
     /// si il y aucun items dans l'inventaire
     /// affiche un message invitant user
@@ -632,7 +695,7 @@ class _StepCreationState extends State<StepCreation>
       //int substepIndex = currentStep.currentSubstep + 1;
 
       String currentSubstep = "(" +
-          (sous_etape + 1).toString() +
+          (sousEtape + 1).toString() +
           "/" +
           howManySubsteps.toString() +
           ")";
@@ -661,16 +724,93 @@ class _StepCreationState extends State<StepCreation>
       icon: Icon(
         Icons.arrow_forward,
       ),
-      onPressed: nextButtonAction,
+      onPressed: () async {
+        await nextButtonAction();
+      },
     );
   }
 
   /// les actions a effectuer pour passer
   /// d'une substep à un autre
-  void nextButtonAction() {
-    // on update le state
+  Future<void> nextButtonAction() async {
+    /// qd on est a la derniere etape
+    if (sousEtape == UPLOAD_FILES) {
+
+    }
+    /// qd on est à la sous étape 3,
+    /// et qu'on veut passer à la sous étape 4,
+    else if (sousEtape == TEXT_EMOJI) {
+      /// - si les 3 premières sous 
+      ///   étapes ont été remplies, 
+      ///   on sauvegarde le contenu 
+      ///   d u canvas photo
+      if (photoStepComplete() && 
+          msgAudioStepComplete() &&
+          textStepComplete()) {
+        
+        await savePhotoCanvas();
+
+        incrementSubstep();
+      }
+      /// - sinon on informe user qu'il doit remplir les 
+      ///   3 premières sous étapes avant de continuer
+      else {
+        userDoUrJob();        
+      }
+    } 
+    /// sinon on passe a l'étape suivante
+    else {
+      incrementSubstep();
+    }
+
+    
+  }
+
+  void userDoUrJob() {
+    String msg =
+        "Avant de pouvoir continuer, il faut prendre une photo, ajouter du texte et/ou émoji dessus, et enregistrer un message audio.";
+    
+    int durationMsec = 7000;
+    displaySnackbar(_scaffoldKey, msg, durationMsec);
+  }
+
+  savePhotoCanvas() async {
+    RenderRepaintBoundary boundary =
+        _canvasKey.currentContext.findRenderObject();
+
+    /// convertit image canvas en list de bytes png
+    var image = await boundary.toImage();
+    var byteData = await image.toByteData(format: ImageByteFormat.png);
+    var pngBytes = byteData.buffer.asUint8List();
+
+    /// ceci est un path unique pour une photo d'étape modifiée
+    var tempDir = (await getTemporaryDirectory()).path;
+    var fullImgPath = '$tempDir/photo_canvas.png';
+
+    /// supprime photo préexistante au cas ou
+    var fileExists = await File(fullImgPath).exists();
+
+    if (fileExists) {
+      await File(fullImgPath).delete();
+    }
+    
+
+    /// sauvegarde list bytes png
+    /// dans le File situé au path unique
+    var imgFile = new File(fullImgPath);
+    imgFile.writeAsBytes(pngBytes);
+
+    /// sauvegarde cette nouvelle photo
+    /// et vide panier de texte et emoji
     setState(() {
-      sous_etape++;
+      _imageFile = imgFile;
+      _textsAndEmojis = NO_TEXTS_AND_EMOJIS;
+    });
+  }
+
+  void incrementSubstep() {
+    return setState(() {
+      sousEtape++;
     });
   }
 
@@ -688,12 +828,31 @@ class _StepCreationState extends State<StepCreation>
   /// les actions a effectuer pour passer
   /// a la sous étape précédente
   void backButtonAction() {
-    if (sous_etape > PRENDRE_PHOTO) {
-      // on update le state
-      setState(() {
-        sous_etape--;
-      });
+    /// a la sous étape photo, qd
+    /// on veut retourner en arriere,
+    if (sousEtape == PRENDRE_PHOTO) {
+      return;
     }
+
+    /// a la sous étape text et emoji 
+    /// ou supérieur, qd
+    /// on veut retourner en arriere,
+    /// on reset le state, 
+    /// on veut une page vierge
+    else if (sousEtape >= TEXT_EMOJI) {
+      resetState();
+    }
+
+    else {
+      decrementSubstep();
+    }
+    
+  }
+
+  void decrementSubstep() {
+    return setState(() {
+      sousEtape--;
+    });
   }
 
   // la barre d'icones en bas de la photo
@@ -710,15 +869,15 @@ class _StepCreationState extends State<StepCreation>
 
   /// les icones de la sous étape en cours
   List<Widget> substepIcons(Report userReport) {
-    if (sous_etape == PRENDRE_PHOTO) {
+    if (sousEtape == PRENDRE_PHOTO) {
       return prendrePhotoIcons();
-    } else if (sous_etape == MSG_AUDIO) {
-      return msgAudioIcons();
-    } else if (sous_etape == TEXTE_OU_EMOJI) {
-      return txtOuEmojiIcons();
-    } else if (sous_etape == ENREGISTRER) {
-      return enregistrerIcons();
-    } else if (sous_etape == INVENTAIRE) {
+    } else if (sousEtape == MSG_AUDIO) {
+      return msgAudioIcons(userReport);
+    } else if (sousEtape == UPLOAD_FILES) {
+      return uploadPhotoIcons();
+    } else if (sousEtape == TEXT_EMOJI) {
+      return txtEmojiIcons(userReport);
+    } else if (sousEtape == INVENTAIRE) {
       return inventaireIcons(userReport);
     } else {
       throw Error();
@@ -735,11 +894,11 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /// les icones de l'étape message audio
-  List<Widget> msgAudioIcons() {
+  List<Widget> msgAudioIcons(Report userReport) {
     if (_isRecording == WE_RECORD) {
       return micIcon();
     } else {
-      return micAndPlayIcons();
+      return micAndPlayIcons(userReport);
     }
   }
 
@@ -753,17 +912,17 @@ class _StepCreationState extends State<StepCreation>
 
   /// si pas d'enregistrement audio en cours,
   /// on veut micro + play/pause
-  List<Widget> micAndPlayIcons() {
+  List<Widget> micAndPlayIcons(Report userReport) {
     return [
       recordIcon(),
-      playPauseIcon(),
+      playPauseIcon(userReport),
     ];
   }
 
   /// l'icone qui joue/pause un enregistrement audio
-  Widget playPauseIcon() {
+  Widget playPauseIcon(Report userReport) {
     if (_playerState == STOPPED) {
-      return playIcon();
+      return playIcon(userReport);
     } else if (_playerState == PLAYING) {
       return pauseIcon();
     } else if (_playerState == PAUSED) {
@@ -774,13 +933,15 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /// l'icone qui joue un enregistrement audio
-  Widget playIcon() {
+  Widget playIcon(Report userReport) {
     return IconButton(
       icon: Icon(
         Icons.play_arrow,
         size: BOTTOM_ICON_SIZE,
       ),
-      onPressed: playIconActions,
+      onPressed: () {
+        playIconActions(userReport);
+      },
       color: Colors.blue,
     );
   }
@@ -811,16 +972,24 @@ class _StepCreationState extends State<StepCreation>
 
   /// les actions a effectuer pour play/pause/resume
   void pauseIconActions() async {
-    int result = await audioPlayer.pause();
+    await audioPlayer.pause();
 
     setState(() {
       _playerState = PAUSED;
     });
   }
 
-  void playIconActions() async {
-    if (_recording != NO_AUDIO_FILE) {
-      int result = await audioPlayer.play(_recording.path, isLocal: true);
+  ///
+  void playIconActions(Report userReport) async {
+    var audioUrl =
+        userReport.getLatestBabyLessonSeen().getCurrentStep().audioFileUrl;
+
+    /// si il existe un fichier audio ou une url
+    if (_recording != NO_AUDIO_FILE || audioUrl != NO_DATA) {
+      await audioPlayer.play(
+        recordingPathOrUrl(userReport),
+        isLocal: localOrNot(userReport),
+      );
 
       setState(() {
         _playerState = PLAYING;
@@ -829,7 +998,7 @@ class _StepCreationState extends State<StepCreation>
   }
 
   void resumeIconActions() async {
-    int result = await audioPlayer.resume();
+    await audioPlayer.resume();
 
     setState(() {
       _playerState = PLAYING;
@@ -856,14 +1025,6 @@ class _StepCreationState extends State<StepCreation>
   Widget secondsPassed() {
     return Text('En cours...');
   }
-
-  /*void ...() {
-          
-            }
-          
-            void ...() {
-          
-            }*/
 
   // l'icone nous permettant d'enregistrer
   /// un message audio
@@ -908,8 +1069,7 @@ class _StepCreationState extends State<StepCreation>
     try {
       /// demande la permission à l'user de pouvoir
       /// utiliser son microphone, et son stockage
-      Map<PermissionGroup, PermissionStatus> permissions =
-          await PermissionHandler().requestPermissions([
+      await PermissionHandler().requestPermissions([
         PermissionGroup.microphone,
         PermissionGroup.storage,
       ]);
@@ -969,13 +1129,52 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /// les icones pour ajouter texte / émoji
-  List<Widget> txtOuEmojiIcons() {
+  List<Widget> uploadPhotoIcons() {
     return [
-      addTxtOrEmojiIcon(),
+      uploadPhotoIcon(),
     ];
   }
 
-  List<Widget> enregistrerIcons() {}
+  List<Widget> uploadAudioIcons() {
+    return [
+      uploadAudioIcon(),
+    ];
+  }
+
+  /// on peut ajouter text ou emoji
+  Widget uploadAudioIcon() {
+    return IconButton(
+      iconSize: ITEM_ICON_SIZE,
+      icon: Icon(
+        Icons.cloud_upload,
+        size: BOTTOM_ICON_SIZE,
+        color: Colors.pink,
+      ),
+      onPressed: uploadAudioActions,
+    );
+  }
+
+  /// que faire qd on veut uploader une photo
+  /// dans le cloud Firebase
+  uploadAudioActions() {
+    /// si aucun upload n'a été démarré
+    if (_createUpload == DONT_CREATE_UP) {
+      /// démarre l'upload
+      setState(() {
+        _createUpload = CREATE_UP;
+      });
+    }
+
+    /// si un upload est déja en cours
+    else if (_createUpload == CREATE_UP) {
+      /// informe l'user que du boulot a déja lieu
+      int durationMsec = 2000;
+      String msg = "Un upload de photo est déja en cours.";
+      displaySnackbar(_scaffoldKey, msg, durationMsec);
+    } else {
+      throw Error();
+    }
+  }
 
   /// les icones de l'inventaire
   List<Widget> inventaireIcons(Report userReport) {
@@ -1076,15 +1275,6 @@ class _StepCreationState extends State<StepCreation>
       onPressed: () => _pickImage(ImageSource.gallery),
       color: Colors.pink,
     );
-  }
-
-  /// la photo de l'étape ainsi que
-  /// le texte et les indicateurs émojis,
-  /// etc...
-  Widget photoArea() {
-    //print(_imageFile);
-
-    return PhotoCanvas(photoFile: _imageFile, photoSize: _photoSize);
   }
 
   /// l'icone nous permettant de gérer
@@ -1432,31 +1622,42 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /// on peut ajouter text ou emoji
-  Widget addTxtOrEmojiIcon() {
+  Widget uploadPhotoIcon() {
     return IconButton(
       iconSize: ITEM_ICON_SIZE,
       icon: Icon(
-        Icons.add,
+        Icons.cloud_upload,
         size: BOTTOM_ICON_SIZE,
         color: Colors.pink,
       ),
-      onPressed: txtOuEmojiActions,
+      onPressed: uploadPhotoActions,
     );
   }
 
-  /// que faire qd on ajoute un text / emoji
-  Widget txtOuEmojiActions() {
-    if (_txtOuEmoji == DRAW_TEXT) {
-      return addTextActions();
-    } else if (_txtOuEmoji == DRAW_EMOJI) {
-      return addEmojiActions();
+  /// que faire qd on veut uploader une photo
+  /// dans le cloud Firebase
+  uploadPhotoActions() {
+    /// si aucun upload n'a été démarré
+    if (_createUpload == DONT_CREATE_UP) {
+      /// démarre l'upload
+      setState(() {
+        _createUpload = CREATE_UP;
+      });
+    }
+
+    /// si un upload est déja en cours
+    else if (_createUpload == CREATE_UP) {
+      /// informe l'user que du boulot a déja lieu
+      int durationMsec = 2000;
+      String msg = "Un upload de photo est déja en cours.";
+      displaySnackbar(_scaffoldKey, msg, durationMsec);
     } else {
       throw Error();
     }
   }
 
   /// ajoutons du texte
-  Widget addTextActions() {
+  void addTextActions() {
     /// essayons d'obtenir un texte venant de l'user
     String title = "Ecris ton texte.";
     String subtitle = "Ajoute texte ci-dessous";
@@ -1476,26 +1677,19 @@ class _StepCreationState extends State<StepCreation>
   /// faisons qqch avec
   void handleFutureText(Future<String> userInput) {
     userInput.then((userInput) {
-      /// 
+      ///
       if (userInput == NO_USER_INPUT) {
         return noText();
-      } 
-      
-      else if (userInput == EMPTY_USER_INPUT) {
+      } else if (userInput == EMPTY_USER_INPUT) {
         return emptyText();
-      } 
-      
-      else if (userInput.length > 0) {
+      } else if (userInput.length > 0) {
         return handleText(userInput);
-      } 
-      
-      else {
+      } else {
         throw Error();
       }
     });
   }
 
-  Widget addEmojiActions() {}
 
   void noText() {
     String msg = "Creation de texte annulée.";
@@ -1530,8 +1724,174 @@ class _StepCreationState extends State<StepCreation>
 
     /// on l'ajoute à la liste de text and drag
     setState(() {
-      _textsAndEmojis.add(draggableText);    
+      _textsAndEmojis.add(draggableText);
     });
-    
+  }
+
+  afterPhotoUploaded(String newFilePath, String fileUrl, Report userReport) {
+    /// if there's an existing photo path,
+    /// delete the photo at that path in firebase,
+    /// and store the new path,
+    ///
+    /// otherwise just store the new path
+    storeNewPhotoFilePath(newFilePath, fileUrl, userReport);
+
+    /// save the data
+    //userReport.save();
+
+    /// reset button so we
+    /// can upload a new photo
+    /*setState(() {
+                                                                      _createUpload = DONT_CREATE_UP;
+                                                                    });*/
+  }
+
+  /// if there's an existing photo path,
+  /// delete the photo at that path in firebase,
+  /// and store the new path,
+  ///
+  /// otherwise just store the new path
+  Future<void> storeNewPhotoFilePath(
+      String newfilePath, String fileUrl, Report userReport) async {
+    var oldfilePath =
+        userReport.getLatestBabyLessonSeen().getCurrentStep().photoFilePath;
+
+    if (oldfilePath == NO_PHOTO_PATH) {
+      storePhotoPath(newfilePath, fileUrl, userReport);
+    } else if (oldfilePath.length > 0) {
+      await deleteFile(oldfilePath);
+      storePhotoPath(newfilePath, fileUrl, userReport);
+    } else {
+      throw Error();
+    }
+  }
+
+  /// if there's an existing photo path,
+  /// delete the photo at that path in firebase,
+  /// and store the new path,
+  ///
+  /// otherwise just store the new path
+  Future<void> storeNewAudioFilePath(
+      String newfilePath, String fileUrl, Report userReport) async {
+    var oldfilePath =
+        userReport.getLatestBabyLessonSeen().getCurrentStep().audioFilePath;
+
+    if (oldfilePath == NO_PHOTO_PATH) {
+      storeAudioPath(newfilePath, fileUrl, userReport);
+    } else if (oldfilePath.length > 0) {
+      await deleteFile(oldfilePath);
+      storeAudioPath(newfilePath, fileUrl, userReport);
+    } else {
+      throw Error();
+    }
+  }
+
+  void storePhotoPath(String newfilePath, String fileUrl, Report userReport) {
+    /// get the current step data
+    var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
+
+    /// store new paths
+    step.photoFilePath = newfilePath;
+    step.photoFileUrl = fileUrl;
+
+    /// save data
+    userReport.save();
+  }
+
+  void storeAudioPath(String newfilePath, String fileUrl, Report userReport) {
+    /// get the current step data
+    var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
+
+    /// store new paths
+    step.audioFilePath = newfilePath;
+    step.audioFileUrl = fileUrl;
+
+    /// save data
+    userReport.save();
+  }
+
+  /// supprime la photo stockée dans firebase storage
+  deleteFile(String oldfilePath) async {
+    await _storage.ref().child(oldfilePath).delete();
+  }
+
+  void resetState() {
+    print("reset step state to beginning");
+
+    setState(() {
+      _imageFile = NO_PHOTO;
+      _photoSize = NORMAL_SIZE;
+      sousEtape = PRENDRE_PHOTO;
+      _isRecording = NO_RECORD;
+      _recording = NO_AUDIO_FILE;
+      _playerState = STOPPED;
+      //_txtOuEmoji = DRAW_TEXT;
+      _textsAndEmojis = [];
+      _createUpload = DONT_CREATE_UP;
+    });
+  }
+
+  String recordingPathOrUrl(Report userReport) {
+    if (_recording != NO_AUDIO_FILE /*&& _recording.path != null*/) {
+      return recordingPath();
+    } else {
+      return audioUrl(userReport);
+    }
+  }
+
+  localOrNot(Report userReport) {
+    if (_recording != NO_AUDIO_FILE) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  String recordingPath() {
+    print("recording path: " + _recording.path);
+    return _recording.path;
+  }
+
+  String audioUrl(Report userReport) {
+    String audioUrl =
+        userReport.getLatestBabyLessonSeen().getCurrentStep().audioFileUrl;
+
+    print("audio url: " + audioUrl);
+    return audioUrl;
+  }
+
+  Widget txtEmojiPanel(Report userReport) {
+    return prendrePhotoPanel(
+        userReport, "Appuie sur + pour ajouter du texte/émoji");
+  }
+
+  List<Widget> txtEmojiIcons(Report userReport) {
+    return [
+      addTxtOrEmojiIcon(userReport),
+    ];
+  }
+
+  addTxtOrEmojiIcon(Report userReport) {
+    return IconButton(
+      iconSize: ITEM_ICON_SIZE,
+      icon: Icon(
+        Icons.add,
+        size: BOTTOM_ICON_SIZE,
+        color: Colors.pink,
+      ),
+      onPressed: addTextActions,
+    );
+  }
+
+  bool photoStepComplete() {
+    return _imageFile != NO_PHOTO;
+  }
+
+  bool msgAudioStepComplete() {
+    return _recording != NO_AUDIO_FILE;
+  }
+
+  bool textStepComplete() {
+    return _textsAndEmojis.length > 0;
   }
 }

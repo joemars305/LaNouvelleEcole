@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/services.dart';
 import '../shared/shared.dart';
-import '../screens/screens.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class TopicsScreen extends StatelessWidget {
@@ -12,7 +11,6 @@ class TopicsScreen extends StatelessWidget {
       future: Global.topicsRef.getData(),
       builder: (BuildContext context, AsyncSnapshot snap) {
         if (snap.hasData) {
-          List<Topic> topics = snap.data;
           return Scaffold(
             appBar: AppBar(
               backgroundColor: Colors.deepPurple,

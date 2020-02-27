@@ -9,8 +9,13 @@ class DragBox extends StatefulWidget {
   final Color insideColor;
   final double fontSize;
 
-  DragBox(this.initPos, this.label, this.fontSize, this.outsideColor,
-      this.insideColor);
+  DragBox(
+    this.initPos, 
+    this.label, 
+    this.fontSize, 
+    this.outsideColor,
+    this.insideColor
+  );
 
   @override
   DragBoxState createState() => DragBoxState();
@@ -38,15 +43,19 @@ class DragBoxState extends State<DragBox> {
 
     var textWidth = 250.0;
 
-    /// la taille de la barre en haut
+    /// la taille de la 2eme barre en haut
     var topBarHeight = AppBar().preferredSize.height;
 
-    ///
-    var actionBarHeight = MediaQuery.of(context).padding.top;
+    /// la taille de la tte première barre
+    var actionBarHeight = 24.0;
+    //MediaQuery.of(context).padding.top;
+
+    print("tbh: " + topBarHeight.toString());
+    print("abh: " + actionBarHeight.toString());
 
     return Positioned(
       left: position.dx,
-      top: position.dy,
+      top: position.dy - topBarHeight - actionBarHeight,
       //width: textWidth,
       child: Container(
         //color: Colors.red,

@@ -13,7 +13,7 @@ class ProfileScreen extends StatelessWidget {
     nous permet d'accéder aux 
     données utilisateur partout dans l'appli
     grace a MultiProvider dans main.dart */
-    Report report = Provider.of<Report>(context);
+    //Report report = Provider.of<Report>(context);
     FirebaseUser user = Provider.of<FirebaseUser>(context);
 
     if (user != null) {
@@ -27,26 +27,11 @@ class ProfileScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (user.photoUrl != null)
-                Container(
-                  width: 100,
-                  height: 100,
-                  margin: EdgeInsets.only(top: 50),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: NetworkImage(user.photoUrl),
-                    ),
-                  ),
-                ),
+              roundicon(user),
               Text(user.email ?? '',
                   style: Theme.of(context).textTheme.headline),
               Spacer(),
-              if (report != null)
-                Text('${report.total ?? 0}',
-                    style: Theme.of(context).textTheme.display3),
-              Text('Quizzes Completed',
-                  style: Theme.of(context).textTheme.subhead),
+              
               Spacer(),
               /* le bouton de déconnexion */
               FlatButton(
@@ -68,6 +53,24 @@ class ProfileScreen extends StatelessWidget {
       );
     } else {
       return LoadingScreen();
+    }
+  }
+
+  Container roundicon(FirebaseUser user) {
+    if (user.photoUrl != null) {
+      return Container(
+        width: 100,
+        height: 100,
+        margin: EdgeInsets.only(top: 50),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          image: DecorationImage(
+            image: NetworkImage(user.photoUrl),
+          ),
+        ),
+      );
+    } else {
+      return Container();
     }
   }
 }
