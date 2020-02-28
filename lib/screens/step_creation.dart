@@ -40,9 +40,9 @@
 /// 
 /// - implémente un bouton restart audio et play/pause
 /// 
-/// - implémente si possible une barre audio
+/// - (plus tard) implémente si possible une barre audio
 /// 
-/// - si possible, implemente la possibilité 
+/// - (plus tard) si possible, implemente la possibilité 
 /// de pouvoir prendre une video pour une étape,
 /// et de le stocker en gifhy.
 /// 
