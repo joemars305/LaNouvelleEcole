@@ -75,20 +75,29 @@ class _UploaderState extends State<Uploader> {
 
   StorageUploadTask _uploadTask = NO_UPLOAD_TASK;
 
+  String _uploadMsg;
 
-  startUpload(BuildContext context, File file, Function func) async {
-    FirebaseUser user = Provider.of<FirebaseUser>(context);
-    String uid = user.uid;
-    /// instant t en millisecondes, sert de nom de fichier
-    int millisSinceEpoch = DateTime.now().millisecondsSinceEpoch;
-    
-    /// le type du fichier (.jpg, .gif, etc...)
-    String filetype = getFileType(file);
+  List<File> files;
+  Report userReport;
+  List<String> uploadMsgs;
+  List<Function> onUploadsDone;
 
-    /// le path du fichier dans firebase
-    String _filePath = 'step_files/$uid/$millisSinceEpoch$filetype';
+  @override
+  void initState() {
+    super.initState();
 
-    print("file path: " + _filePath);
+    files = widget.files;
+    userReport = widget.userReport;
+    uploadMsgs = widget.uploadMsgs;
+    onUploadsDone = widget.onUploadsDone;
+  }
+
+  /// demarre l'upload,
+  /// et run la fonction de fin d'upload quand
+  /// l'upload est terminé
+  startUpload(BuildContext context, File file, Function uploadDoneFunc,
+      String lastMsg) async {
+    String _filePath = getFilePath(context, file);
 
     ///objet represent la location du fichier dans firebase
     var ref = _storage.ref().child(_filePath);
@@ -96,22 +105,66 @@ class _UploaderState extends State<Uploader> {
     setState(() {
       /// create the process of uploading the file
       _uploadTask = ref.putFile(file);
-      
-      runOnUploadDoneFunc(ref, _filePath, func);
+
+      /// the message to be displayed while upload is going on.
+      _uploadMsg = lastMsg;
+
+      runOnUploadDoneFunc(ref, _filePath, uploadDoneFunc);
     });
+  }
+
+  String getFilePath(BuildContext context, File file) {
+    String uid = getUserUid(context);
+
+    /// instant t en millisecondes, sert de nom de fichier
+    int millisSinceEpoch = getCurrentMillisTime();
+
+    /// le type du fichier (.jpg, .gif, etc...)
+    String filetype = getFileType(file);
+
+    /// le path du fichier dans firebase
+    String _filePath = 'step_files/$uid/$millisSinceEpoch$filetype';
+
+    print("file path: " + _filePath);
+    return _filePath;
+  }
+
+  int getCurrentMillisTime() {
+    /// instant t en millisecondes, sert de nom de fichier
+    int millisSinceEpoch = DateTime.now().millisecondsSinceEpoch;
+    return millisSinceEpoch;
+  }
+
+  String getUserUid(BuildContext context) {
+    FirebaseUser user = Provider.of<FirebaseUser>(context);
+    String uid = user.uid;
+    return uid;
   }
 
   @override
   Widget build(BuildContext context) {
+    /// create an upload task if necessary
     createUploadTask(context);
 
-    return handleTask();
+    /// if the uploads are all complete
+    /// show message telling user to click the next button to go to the next step
+    if (uploadTaskIsComplete() && !theresFilesToUpload()) {
+      return goToNextStep();
+    }
+
+    /// otherwise show upload progress
+    else {
+      return showUploadProgress();
+    }
   }
 
   createUploadTask(BuildContext context) {
     /// if there's 1 or more files to upload
-    if (widget.files.length > 0)  {
-      /// start an file upload.
+    /// and the uploadtask is either nonexistent,
+    /// or completed...
+    if (theresFilesToUpload() &&
+        (!uploadTaskExists() || uploadTaskIsComplete())) {
+      /// ...start an file upload.
       /// we get the file, and it's
       /// corresponding function
       /// that we run after the file upload is done.
@@ -121,17 +174,18 @@ class _UploaderState extends State<Uploader> {
       /// there's 2 lists, a list of files,
       /// and a list of functions,
       /// we pop the last file,
-      /// we also pop it's corresponding last fonction
-      var lastFile = widget.files.removeLast();
-      var lastFunc = widget.onUploadsDone.removeLast();
-
-      startUpload(context, lastFile, lastFunc);
+      /// we pop it's corresponding fonction to be run on upload end
+      /// we pop the message to be displayed during upload
+      var lastFile = files.removeLast();
+      var lastFunc = onUploadsDone.removeLast();
+      var lastMsg = uploadMsgs.removeLast();
+      startUpload(context, lastFile, lastFunc, lastMsg);
     }
-
-    
   }
 
-  Widget handleTask() {
+  bool theresFilesToUpload() => files.length > 0;
+
+  Widget showUploadProgress() {
     return StreamBuilder<StorageTaskEvent>(
         stream: _uploadTask.events,
         builder: (context, snapshot) {
@@ -145,57 +199,35 @@ class _UploaderState extends State<Uploader> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 uploadStatusIcon(),
+                uploadMsg(),
                 horizontalUploadProgress(progressPercent),
                 numericUploadProgress(progressPercent),
               ]);
         });
   }
 
-  /// une icone représentant un objet lambda
-  Widget cloudIcon() {
-    return Image.asset(
-      'assets/icon.png',
-      width: 45,
-      height: 45,
-      fit: BoxFit.contain,
-    );
-  }
-
-  // le message
-  Widget msg(String msg) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(80.0, 30.0, 80.0, 0.0),
-      child: Text(
-        msg,
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  /*Widget handleNoTask() {
-    return Container(
-      color: Colors.pink,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            cloudIcon(),
-            msg(widget.uploadMsg),
-          ],
-        ),
-      ),
-    );
-  }*/
-
   uploadStatusIcon() {
-    if (_uploadTask.isInProgress) {
-      return nyanCat();
-    } else if (_uploadTask.isPaused) {
-      return paused();
-    } else if (_uploadTask.isComplete) {
-      return boomerMeme();
+    var icon;
+
+    if (uploadTaskIsInProgress()) {
+      icon = nyanCat();
+    } else if (uploadTaskIsPaused()) {
+      icon = paused();
+    } else if (uploadTaskIsComplete()) {
+      icon = boomerMeme();
     }
+
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: icon,
+    );
   }
+
+  bool uploadTaskIsComplete() => _uploadTask.isComplete;
+
+  bool uploadTaskIsPaused() => _uploadTask.isPaused;
+
+  bool uploadTaskIsInProgress() => _uploadTask.isInProgress;
 
   horizontalUploadProgress(double progressPercent) {
     return Padding(
@@ -254,5 +286,27 @@ class _UploaderState extends State<Uploader> {
     print("file type: " + ext);
 
     return ext;
+  }
+
+  bool uploadTaskExists() {
+    return _uploadTask != NO_UPLOAD_TASK;
+  }
+
+  uploadMsg() {
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Text(_uploadMsg,
+          style: TextStyle(
+            fontSize: 20,
+          )),
+    );
+  }
+
+  Widget goToNextStep() {
+    return centeredMsg(
+      "assets/icon.png", 
+      "Etape uploadée avec succès ! Passons à la prochaine étape",
+      Colors.indigoAccent,
+    );
   }
 }

@@ -1,6 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:quizapp/parts/pretty_text.dart';
+
+import 'consts.dart';
 
 class DragBox extends StatefulWidget {
   final Offset initPos;
@@ -9,13 +10,8 @@ class DragBox extends StatefulWidget {
   final Color insideColor;
   final double fontSize;
 
-  DragBox(
-    this.initPos, 
-    this.label, 
-    this.fontSize, 
-    this.outsideColor,
-    this.insideColor
-  );
+  DragBox(this.initPos, this.label, this.fontSize, this.outsideColor,
+      this.insideColor);
 
   @override
   DragBoxState createState() => DragBoxState();
@@ -62,34 +58,47 @@ class DragBoxState extends State<DragBox> {
         constraints: BoxConstraints(maxWidth: textWidth),
         child: Draggable(
           data: widget.outsideColor,
-          child: PrettyText(
-            text: text,
-            outsideColor: widget.outsideColor,
-            insideColor: widget.insideColor,
-            fontSize: fontSize,
-          ),
-          
-          feedback: Material(
-            color: Colors.blue.withOpacity(0.5),
-            elevation: 20.0,
-            borderRadius: BorderRadius.all(Radius.circular(10.0)),
-            child: Container(
-              constraints: BoxConstraints(maxWidth: textWidth),
-              child: PrettyText(
-                text: text,
-                outsideColor: widget.outsideColor,
-                insideColor: widget.insideColor,
-                fontSize: fontSize,
-              ),
-            ),
-          ),
-          onDraggableCanceled: (velocity, offset) {
-            setState(() {
-              position = offset;
-            });
-          },
+          child: prettyTextOrNot(),
+          feedback: dragBoxWhenDragged(textWidth),
+          onDraggableCanceled: onDragBoxDropped,
         ),
       ),
     );
+  }
+
+  void onDragBoxDropped(velocity, offset) {
+    setState(() {
+      position = offset;
+    });
+  }
+
+  Material dragBoxWhenDragged(double textWidth) {
+    return Material(
+      color: Colors.blue.withOpacity(0.5),
+      elevation: 20.0,
+      borderRadius: BorderRadius.all(Radius.circular(10.0)),
+      child: Container(
+        constraints: BoxConstraints(maxWidth: textWidth),
+        child: prettyTextOrNot(),
+      ),
+    );
+  }
+
+  Widget prettyTextOrNot() {
+    if (widget.outsideColor == NO_DATA && widget.insideColor == NO_DATA) {
+      return Text(
+        text,
+        style: TextStyle(
+          fontSize: widget.fontSize,
+        ),
+      );
+    } else {
+      return PrettyText(
+        text: text,
+        outsideColor: widget.outsideColor,
+        insideColor: widget.insideColor,
+        fontSize: fontSize,
+      );
+    }
   }
 }

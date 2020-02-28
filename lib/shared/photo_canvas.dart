@@ -53,6 +53,38 @@ class PhotoCanvas extends StatelessWidget {
     this.photoUrl,
   }) : super(key: key);
 
+  @override
+  Widget build(BuildContext context) {
+    // contient tous les éléments de la zone photo
+    // photo, texte, émoji, etc...
+    List<Widget> elements = [];
+
+    // si il n'y a pas de photo disponible,
+    // ni localement, ni uploadée
+    if (photoFile == NO_PHOTO && photoUrl == NO_PHOTO_URL) {
+      // affichons le message sur fond jaune
+      // invitant l'user à prendre une photo
+      elements.add(takePhotoMsg());
+    }
+
+    /// si il y a une photo dispo
+    else {
+      /// affiche cette photo
+      elements.add(photo());
+    }
+
+    /// ajoute les texts et emojis etc...
+    /// drag and drop
+    elements += textsAndEmojis;
+
+    print(elements);
+
+    /// nous allons afficher ceci en tant que Stack
+    return Stack(
+      children: elements,
+    );
+  }
+
   nyanCat() {
     return AssetImage(
       'assets/nyan.gif',
@@ -126,66 +158,23 @@ class PhotoCanvas extends StatelessWidget {
     );
   }
 
-  // le message
-  Widget msg() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(80.0, 30.0, 80.0, 0.0),
-      child: Text(
-        noPhotoText,
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
+  
+  
 
   /// affiche un message sur fond orange
   ///  invitant jonny à
   /// prendre une photo
   Widget takePhotoMsg() {
-    return Container(
-      color: Colors.orange,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            studentIcon(),
-            msg(),
-          ],
-        ),
-      ),
+    return centeredMsg(
+      'assets/icon.png',
+      noPhotoText,
+      Colors.lightBlue,    
     );
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    // contient tous les éléments de la zone photo
-    // photo, texte, émoji, etc...
-    List<Widget> elements = [];
+  }  
+  
 
-    // si il n'y a pas de photo disponible,
-    // ni localement, ni uploadée
-    if (photoFile == NO_PHOTO && photoUrl == NO_PHOTO_URL) {
-      // affichons le message sur fond jaune
-      // invitant l'user à prendre une photo
-      elements.add(takePhotoMsg());
-    }
-
-    /// si il y a une photo dispo
-    else {
-      /// affiche cette photo
-      elements.add(photo());
-    }
-
-    /// ajoute les texts et emojis etc...
-    /// drag and drop
-    elements += textsAndEmojis;
-
-    print(elements);
-
-    /// nous allons afficher ceci en tant que Stack
-    return Stack(
-      children: elements,
-    );
-  }
+  
 
   networkImage() {
     return NetworkImage(photoUrl);

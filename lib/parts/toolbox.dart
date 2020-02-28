@@ -63,7 +63,6 @@ Future<String> getUserInput(
   String subtitle,
   String hint,
 ) async {
-  
   String inputText = '';
 
   return showDialog<String>(
@@ -128,7 +127,6 @@ void displaySnackbar(
   scaffoldKey.currentState.showSnackBar(snackBar);
 }
 
-
 /// FUTURE_CHOICE représente
 /// un futur choix provenant
 /// de l'utilisateur
@@ -137,16 +135,17 @@ void displaySnackbar(
 /// Future<Choice> autrement
 
 /*
-Future<Choice> userChoice = getUserChoice(
-  context,
-  title,
-  choices,
-);
+fnActions() {
+  Future<Choice> userChoice = getUserChoice(
+    context,
+    title,
+    choices,
+  );
 
-fnForFutureChoice(userChoice);
+  fnForFutureChoice(userChoice);
+}
 
-....
-....
+
 
 void fnForFutureChoice(Future<Choice> futureChoice) {
   futureChoice.then((choice) {
@@ -229,7 +228,7 @@ fnForChoice(Choice choice) {
 */
 class Choice {
   String choiceDescription;
-  int choiceValue;
+  var choiceValue;
 
   Choice(this.choiceDescription, this.choiceValue);
 }
@@ -244,3 +243,40 @@ List fnForChoices(List<Choice> choices) {
   }).toList();
 }
 */
+
+/// nous permet d'afficher un message centré
+Widget centeredMsg(String iconPath, String text, Color color) {
+  return Container(
+    color: color,
+    child: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          icon(iconPath),
+          msg(text),
+        ],
+      ),
+    ),
+  );
+}
+
+/// une icone représentant un objet lambda
+  Widget icon(String path) {
+    return Image.asset(
+      path,
+      width: 45,
+      height: 45,
+      fit: BoxFit.contain,
+    );
+  }
+
+  // le message
+  Widget msg(String msg) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(80.0, 30.0, 80.0, 0.0),
+      child: Text(
+        msg,
+        textAlign: TextAlign.center,
+      ),
+    );
+  }

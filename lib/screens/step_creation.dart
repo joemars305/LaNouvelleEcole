@@ -1,18 +1,67 @@
+
+/// - remplace Etape 1 (1/5) par 
+/// ce texte, mais cliquable.
+/// ceci doit ouvrire une liste de choix,
+/// 1 pour chaque étape existante.
+/// (navigation entre etape)
 ///
+/// - ajouter bouton garbage permettant soit 
+/// reset ou delete step topbar
+/// 
+/// - ajoute bouton garbage botom bar
+/// pour supprimer le dernier texte/émoji
+/// 
+/// - lorsque un upload est terminé
+/// on a 2 choix:
+/// * soit on va a l'etape suivante,
+/// * soit on termine la leçon
+/// 
+/// - Si on va a l'étape suivante: 
+/// * on crée une nouvelle étape 
+/// dans la base de données.
+/// 
+/// - Si on termine la leçon:
+/// * on prend une dernière photo
+/// de thumbnail, 
+/// * on marque le bébé lecon en mode terminé,
+/// 
+/// 
+/// 
+/// 
+/// - implémente le panel Leçons,
+/// pour que les bébé lecons en mode terminé
+/// soient visible
+/// 
+/// - quand on clique une leçon, on va a la dernière 
+/// étape visitée par l'user.
+/// 
+/// - chaque étape est une photo accompagnée, d'un message audio
+/// qui joue une fois automatiquement.
+/// 
+/// - implémente un bouton restart audio et play/pause
+/// 
+/// - implémente si possible une barre audio
+/// 
+/// - si possible, implemente la possibilité 
+/// de pouvoir prendre une video pour une étape,
+/// et de le stocker en gifhy.
+/// 
+/// - (plus tard) lorsque on accède a une lecon:
+/// * si l'user a déja acheté les fournitures, 
+///   dirige le directement
+///   vers la derniere étape visitée
+/// * sinon dirige le vers l'étape 
+///   d'approvisionnement de
+///   ressources.
 ///
-/// - ajoute étape text et émojis
-/// avant étape upload photo.
-/// on veut pouvoir ajouter texte ou émoji,
-/// puis sauvegarder résultat local.
-///
-/// - ajouter 2 boutons étap préc et étap suiv
-/// a la place des 2 flèches actuelles
-///
-/// - ajouter bouton terminer qui propose 2 choix.
-///
-/// - soit on supprime l'étape
-///
-/// - soit on termine la leçon
+///  - (plus tard) une fois la leçon terminée,
+/// on veut pouvoir ajouter plus d'infos dans 
+/// l'inventaire, comme:
+/// * les prix unitaire des objets,
+/// * une url liant vers un site d'achat
+/// * une position google maps représentant
+///   un lieu d'approvisionnement de ressource,
+///   payant ou naturel.
 
 import 'dart:io';
 import 'dart:ui';
@@ -418,7 +467,7 @@ class _StepCreationState extends State<StepCreation>
       return txtEmojiPanel(userReport);
     } else if (sousEtape == UPLOAD_FILES) {
       return uploadFilesPanel(userReport);
-    }  else if (sousEtape == INVENTAIRE) {
+    } else if (sousEtape == INVENTAIRE) {
       return inventairePanel(userReport);
     } else {
       throw Error();
@@ -427,7 +476,6 @@ class _StepCreationState extends State<StepCreation>
 
   /// permet de voir la photo qu'on a prise
   Widget prendrePhotoPanel(Report userReport, String msg) {
-
     return RepaintBoundary(
       key: _canvasKey,
       child: PhotoCanvas(
@@ -473,8 +521,6 @@ class _StepCreationState extends State<StepCreation>
 
   /// enregistrement, donc countdown
   Widget recordingAudioPanel() {
-    
-
     return circularCountdown();
   }
 
@@ -577,23 +623,15 @@ class _StepCreationState extends State<StepCreation>
   ///
   Widget uploadFilesPanel(Report userReport) {
     return Uploader(
-      files: [
-        _imageFile, 
-        File(_recording.path)
-      ],
+      files: [_imageFile, File(_recording.path)],
       userReport: userReport,
       uploadMsgs: [
-        "Upload de photo en cours...", 
+        "Upload de photo en cours...",
         "Upload de message audio en cours..."
       ],
-      onUploadsDone: [
-        afterPhotoUploaded, 
-        afterAudioUploaded
-      ],
+      onUploadsDone: [afterPhotoUploaded, afterAudioUploaded],
     );
   }
-
-
 
   afterAudioUploaded(String newFilePath, String fileUrl, Report userReport) {
     /// if there's an existing photo path,
@@ -618,7 +656,6 @@ class _StepCreationState extends State<StepCreation>
     /// combien d'items individuels existent dans l'inventaire ?
     int qtyItems = userReport.getLatestBabyLessonSeen().items.length;
 
-
     /// si il y aucun items dans l'inventaire
     /// affiche un message invitant user
     /// à appuyer sur l'icone +
@@ -635,27 +672,10 @@ class _StepCreationState extends State<StepCreation>
 
   /// Ajoute un objet dans ton inventaire en appuyant sur +
   Widget createItemsMsg() {
-    return Container(
-      color: Colors.pink,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            itemIcon(),
-            msg("Ajoute un objet dans ton inventaire en appuyant sur +"),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// une icone représentant un objet lambda
-  Widget itemIcon() {
-    return Image.asset(
+    return centeredMsg(
       'assets/wrench.png',
-      width: 45,
-      height: 45,
-      fit: BoxFit.contain,
+      "Ajoute un objet dans ton inventaire en appuyant sur +",
+      Colors.red,
     );
   }
 
@@ -735,41 +755,38 @@ class _StepCreationState extends State<StepCreation>
   Future<void> nextButtonAction() async {
     /// qd on est a la derniere etape
     if (sousEtape == UPLOAD_FILES) {
-
     }
+
     /// qd on est à la sous étape 3,
     /// et qu'on veut passer à la sous étape 4,
     else if (sousEtape == TEXT_EMOJI) {
-      /// - si les 3 premières sous 
-      ///   étapes ont été remplies, 
-      ///   on sauvegarde le contenu 
+      /// - si les 3 premières sous
+      ///   étapes ont été remplies,
+      ///   on sauvegarde le contenu
       ///   d u canvas photo
-      if (photoStepComplete() && 
-          msgAudioStepComplete() &&
-          textStepComplete()) {
-        
+      if (photoStepComplete() && msgAudioStepComplete() && textStepComplete()) {
         await savePhotoCanvas();
 
         incrementSubstep();
       }
-      /// - sinon on informe user qu'il doit remplir les 
+
+      /// - sinon on informe user qu'il doit remplir les
       ///   3 premières sous étapes avant de continuer
       else {
-        userDoUrJob();        
+        userDoUrJob();
       }
-    } 
+    }
+
     /// sinon on passe a l'étape suivante
     else {
       incrementSubstep();
     }
-
-    
   }
 
   void userDoUrJob() {
     String msg =
         "Avant de pouvoir continuer, il faut prendre une photo, ajouter du texte et/ou émoji dessus, et enregistrer un message audio.";
-    
+
     int durationMsec = 7000;
     displaySnackbar(_scaffoldKey, msg, durationMsec);
   }
@@ -793,7 +810,6 @@ class _StepCreationState extends State<StepCreation>
     if (fileExists) {
       await File(fullImgPath).delete();
     }
-    
 
     /// sauvegarde list bytes png
     /// dans le File situé au path unique
@@ -834,19 +850,16 @@ class _StepCreationState extends State<StepCreation>
       return;
     }
 
-    /// a la sous étape text et emoji 
+    /// a la sous étape text et emoji
     /// ou supérieur, qd
     /// on veut retourner en arriere,
-    /// on reset le state, 
+    /// on reset le state,
     /// on veut une page vierge
     else if (sousEtape >= TEXT_EMOJI) {
       resetState();
-    }
-
-    else {
+    } else {
       decrementSubstep();
     }
-    
   }
 
   void decrementSubstep() {
@@ -874,7 +887,7 @@ class _StepCreationState extends State<StepCreation>
     } else if (sousEtape == MSG_AUDIO) {
       return msgAudioIcons(userReport);
     } else if (sousEtape == UPLOAD_FILES) {
-      return uploadPhotoIcons();
+      return uploadFilesIcons();
     } else if (sousEtape == TEXT_EMOJI) {
       return txtEmojiIcons(userReport);
     } else if (sousEtape == INVENTAIRE) {
@@ -1129,10 +1142,8 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /// les icones pour ajouter texte / émoji
-  List<Widget> uploadPhotoIcons() {
-    return [
-      uploadPhotoIcon(),
-    ];
+  List<Widget> uploadFilesIcons() {
+    return [];
   }
 
   List<Widget> uploadAudioIcons() {
@@ -1325,28 +1336,10 @@ class _StepCreationState extends State<StepCreation>
   ///  invitant jonny à
   /// patienter
   Widget loadingMsg() {
-    return Container(
-      color: Colors.orange,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            studentIcon(),
-            msg("Veuillez patientier please..."),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // le message
-  Widget msg(String msg) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(80.0, 30.0, 80.0, 0.0),
-      child: Text(
-        msg,
-        textAlign: TextAlign.center,
-      ),
+    return centeredMsg(
+      'assets/icon.png',
+      "Veuillez patienter svp...",
+      Colors.purple,
     );
   }
 
@@ -1354,17 +1347,10 @@ class _StepCreationState extends State<StepCreation>
   /// informant l'user qu'un problème est survenu
   /// lors du chargement des données utilisateur
   Widget errorMsg() {
-    return Container(
-      color: Colors.purple,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            studentIcon(),
-            msg("Oups il y a un problème lors du chargement des données utilisateur..."),
-          ],
-        ),
-      ),
+    return centeredMsg(
+      'assets/icon.png',
+      "Oups il y a un problème lors du chargement des données utilisateur...",
+      Colors.green,
     );
   }
 
@@ -1690,7 +1676,6 @@ class _StepCreationState extends State<StepCreation>
     });
   }
 
-
   void noText() {
     String msg = "Creation de texte annulée.";
     int durationMsec = 2000;
@@ -1879,8 +1864,37 @@ class _StepCreationState extends State<StepCreation>
         size: BOTTOM_ICON_SIZE,
         color: Colors.pink,
       ),
-      onPressed: addTextActions,
+      onPressed: addTextOrEmojiActions,
     );
+  }
+
+  void addTextOrEmojiActions() {
+    List<Choice> choices = [
+      Choice("🔤 Du texte", ADD_TEXT),
+      Choice("👉 Un émoji", ADD_EMOJI),
+    ];
+
+    Future<Choice> userChoice = getUserChoice(
+      context,
+      "Tu veux ajouter du texte, ou un émoji ? 💖",
+      choices,
+    );
+
+    handleTextEmojiChoice(userChoice);
+  }
+
+  void handleTextEmojiChoice(Future<Choice> futureChoice) {
+    futureChoice.then((choice) {
+      if (choice == NO_FUTURE_CHOICE) {
+        return addTxtEmCanceled();
+      } else if (choice.choiceValue == ADD_TEXT) {
+        return addTextActions();
+      } else if (choice.choiceValue == ADD_EMOJI) {
+        return addEmojiChoices();
+      } else {
+        throw Error();
+      }
+    });
   }
 
   bool photoStepComplete() {
@@ -1893,5 +1907,70 @@ class _StepCreationState extends State<StepCreation>
 
   bool textStepComplete() {
     return _textsAndEmojis.length > 0;
+  }
+
+  void addTxtEmCanceled() {
+    displaySnackbar(
+      _scaffoldKey,
+      "🌎🌞💨 On ajoute pas de texte ou émoji 🌎💨🌞💨",
+      2000,
+    );
+  }
+
+  void addEmojiChoices() {
+    String title = "Choisis un émoji.";
+
+    List<Choice> emojis = [
+      Choice("👈🏾", "👈🏾"),
+      Choice("👉🏾", "👉🏾"),
+      Choice("👆🏾", "👆🏾"),
+      Choice("👇🏾", "👇🏾"),
+      Choice("👈", "👈"),
+      Choice("👉", "👉"),
+      Choice("👆", "👆"),
+      Choice("👇", "👇"),
+      Choice("👌🏻", "👌🏻"),
+      Choice("👌🏻", "👌🏻"),
+    ];
+
+    Future<Choice> userChoice = getUserChoice(
+      context,
+      title,
+      emojis,
+    );
+
+    handleFutureEmojiChoice(userChoice);
+  }
+
+  void handleFutureEmojiChoice(Future<Choice> futureChoice) {
+    futureChoice.then((choice) {
+      if (choice == NO_FUTURE_CHOICE) {
+        return noEmojiChoice();
+      } else {
+        return addEmojiActions(choice.choiceValue);
+      }
+    });
+  }
+
+  void noEmojiChoice() {
+    displaySnackbar(
+      _scaffoldKey,
+      "🌎💨🌞 On ajoute pas d'émoji 🌎💨🌞",
+      2000,
+    );
+  }
+
+  void addEmojiActions(String emoji) {
+    var dragEmoji = DragBox(
+      Offset(250.0, 250.0),
+      emoji,
+      25,
+      NO_DATA,
+      NO_DATA,
+    );
+
+    setState(() {
+      _textsAndEmojis.add(dragEmoji);
+    });
   }
 }

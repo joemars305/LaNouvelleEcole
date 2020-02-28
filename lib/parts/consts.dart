@@ -240,3 +240,7 @@ const NO_DATA = null;
 
 
 const List<Widget> NO_TEXTS_AND_EMOJIS = [];
+
+const int ADD_TEXT = 0;
+const int ADD_EMOJI = 1;
+const NO_FUTURE_CHOICE = null;
