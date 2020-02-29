@@ -1,61 +1,56 @@
 
-/// - remplace Etape 1 (1/5) par 
-/// ce texte, mais cliquable.
-/// ceci doit ouvrire une liste de choix,
-/// 1 pour chaque étape existante.
-/// (navigation entre etape)
 ///
-/// - ajouter bouton garbage permettant soit 
+/// - ajouter bouton garbage permettant soit
 /// reset ou delete step topbar
-/// 
+///
 /// - ajoute bouton garbage botom bar
 /// pour supprimer le dernier texte/émoji
-/// 
+///
 /// - lorsque un upload est terminé
 /// on a 2 choix:
 /// * soit on va a l'etape suivante,
 /// * soit on termine la leçon
-/// 
-/// - Si on va a l'étape suivante: 
-/// * on crée une nouvelle étape 
+///
+/// - Si on va a l'étape suivante:
+/// * on crée une nouvelle étape
 /// dans la base de données.
-/// 
+///
 /// - Si on termine la leçon:
 /// * on prend une dernière photo
-/// de thumbnail, 
+/// de thumbnail,
 /// * on marque le bébé lecon en mode terminé,
-/// 
-/// 
-/// 
-/// 
+///
+///
+///
+///
 /// - implémente le panel Leçons,
 /// pour que les bébé lecons en mode terminé
 /// soient visible
-/// 
-/// - quand on clique une leçon, on va a la dernière 
+///
+/// - quand on clique une leçon, on va a la dernière
 /// étape visitée par l'user.
-/// 
+///
 /// - chaque étape est une photo accompagnée, d'un message audio
 /// qui joue une fois automatiquement.
-/// 
+///
 /// - implémente un bouton restart audio et play/pause
-/// 
+///
 /// - (plus tard) implémente si possible une barre audio
-/// 
-/// - (plus tard) si possible, implemente la possibilité 
+///
+/// - (plus tard) si possible, implemente la possibilité
 /// de pouvoir prendre une video pour une étape,
 /// et de le stocker en gifhy.
-/// 
+///
 /// - (plus tard) lorsque on accède a une lecon:
-/// * si l'user a déja acheté les fournitures, 
+/// * si l'user a déja acheté les fournitures,
 ///   dirige le directement
 ///   vers la derniere étape visitée
-/// * sinon dirige le vers l'étape 
+/// * sinon dirige le vers l'étape
 ///   d'approvisionnement de
 ///   ressources.
 ///
 ///  - (plus tard) une fois la leçon terminée,
-/// on veut pouvoir ajouter plus d'infos dans 
+/// on veut pouvoir ajouter plus d'infos dans
 /// l'inventaire, comme:
 /// * les prix unitaire des objets,
 /// * une url liant vers un site d'achat
@@ -727,12 +722,65 @@ class _StepCreationState extends State<StepCreation>
 
     return AppBar(
       leading: backButton(),
-      title: Text(title),
+      title: titleNavigation(title, userReport),
       actions: <Widget>[
-        /// l'icone suivant
+        delButton(),
         nextButton(),
       ],
     );
+  }
+
+  Widget titleNavigation(String title, Report userReport) {
+    return new GestureDetector(
+      onTap: () {
+        goToStepActions(userReport);
+      },
+      child: new Text(title),
+    );
+  }
+
+  void goToStepActions(Report userReport) {
+    List<Choice> choices = stepsChoices(userReport);
+
+    Future<Choice> userChoice = getUserChoice(
+      context,
+      "Tu veux aller vers quelle étape ?",
+      choices,
+    );
+
+    fnForStepChoice(userChoice, userReport);
+  }
+
+  List<Choice> stepsChoices(Report userReport) {
+    var babyLesson = userReport.getLatestBabyLessonSeen();
+    var steps = babyLesson.steps;
+
+    return steps
+        .asMap()
+        .map((etapeIndex, step) {
+          var etapeDescription = "🚀 Etape " + etapeIndex.toString();
+          var etapeChoisie = Choice(
+            etapeDescription,
+            etapeIndex,
+          );
+
+          return MapEntry(
+            etapeIndex,
+            etapeChoisie,
+          );
+        })
+        .values
+        .toList();
+  }
+
+  void fnForStepChoice(Future<Choice> futureChoice, Report userReport) {
+    futureChoice.then((choice) {
+      if (choice == NO_FUTURE_CHOICE) {
+        return noStepChoice(choice);
+      } else {
+        return handleStepChoice(choice, userReport);
+      }
+    });
   }
 
   /// le bouton permettant
@@ -1727,8 +1775,8 @@ class _StepCreationState extends State<StepCreation>
     /// reset button so we
     /// can upload a new photo
     /*setState(() {
-                                                                      _createUpload = DONT_CREATE_UP;
-                                                                    });*/
+                                                                                              _createUpload = DONT_CREATE_UP;
+                                                                                            });*/
   }
 
   /// if there's an existing photo path,
@@ -1972,5 +2020,19 @@ class _StepCreationState extends State<StepCreation>
     setState(() {
       _textsAndEmojis.add(dragEmoji);
     });
+  }
+
+  void noStepChoice(Choice choice) {
+    var msg = "On reste ici !";
+    var durationMsec = 2500;
+
+    displaySnackbar(_scaffoldKey, msg, durationMsec);
+  }
+
+  void handleStepChoice(Choice choice, Report userReport) {
+    var bblesson = userReport.getLatestBabyLessonSeen();
+    bblesson.currentStep = choice.choiceValue;
+
+    userReport.save();
   }
 }
