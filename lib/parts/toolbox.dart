@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quizapp/parts/parts.dart';
+import 'package:quizapp/services/models.dart';
 
 /// USER_INPUT_STRING représente
 /// un futur texte provenant
@@ -261,22 +262,43 @@ Widget centeredMsg(String iconPath, String text, Color color) {
 }
 
 /// une icone représentant un objet lambda
-  Widget icon(String path) {
-    return Image.asset(
-      path,
-      width: 45,
-      height: 45,
-      fit: BoxFit.contain,
-    );
-  }
+Widget icon(String path) {
+  return Image.asset(
+    path,
+    width: 45,
+    height: 45,
+    fit: BoxFit.contain,
+  );
+}
 
-  // le message
-  Widget msg(String msg) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(80.0, 30.0, 80.0, 0.0),
-      child: Text(
-        msg,
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
+// le message
+Widget msg(String msg) {
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(80.0, 30.0, 80.0, 0.0),
+    child: Text(
+      msg,
+      textAlign: TextAlign.center,
+    ),
+  );
+}
+
+deleteLessonData(Report userReport, int index) async {
+  var lesson = userReport.babyLessons[index];
+
+  var result = await lesson.deleteLessonData();
+
+  return result;
+}
+
+deleteLesson(Report userReport, int index) async {
+  /// supprime les photos prises pour cette leçon
+  await deleteLessonData(userReport, index);
+
+  // une fois swipé, on supprime le bébé leçon
+  // situé à la position 'index', dans la liste de bébé leçons
+  // de l'utilisateur
+  userReport.babyLessons.removeAt(index);
+
+  // puis on met à jour le Report
+  userReport.save();
+}

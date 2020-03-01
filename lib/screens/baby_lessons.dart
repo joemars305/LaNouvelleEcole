@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:quizapp/parts/toolbox.dart';
 import '../services/services.dart';
 import '../shared/shared.dart';
 
@@ -155,18 +156,7 @@ class BabyLessonsScreen extends StatelessWidget {
       itemBuilder: (context, index) {
         return Dismissible(
           onDismissed: (DismissDirection direction) async {
-            /// supprime les photos prises pour cette leçon
-            var del = await deleteLessonData(userReport, index);
-
-            print(del);
-
-            // une fois swipé, on supprime le bébé leçon
-            // situé à la position 'index', dans la liste de bébé leçons
-            // de l'utilisateur
-            userReport.babyLessons.removeAt(index);
-
-            // puis on met à jour le Report
-            userReport.save();
+            await deleteLesson(userReport, index);
           },
           child: BabyLessonCard(userReport: userReport, index: index),
           key: UniqueKey(),
@@ -176,13 +166,7 @@ class BabyLessonsScreen extends StatelessWidget {
     );
   }
 
-  deleteLessonData(Report userReport, int index) async {
-    var lesson = userReport.babyLessons[index];
-    
-    var result = await lesson.deleteLessonData();
-
-    return result;
-  }
+  
 }
 
 //// le layout d'un bébé leçon individuel

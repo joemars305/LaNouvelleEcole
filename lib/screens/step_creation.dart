@@ -1,11 +1,5 @@
 
 ///
-/// - ajouter bouton garbage permettant soit
-/// reset ou delete step topbar
-///
-/// - ajoute bouton garbage botom bar
-/// pour supprimer le dernier texte/émoji
-///
 /// - lorsque un upload est terminé
 /// on a 2 choix:
 /// * soit on va a l'etape suivante,
@@ -19,9 +13,6 @@
 /// * on prend une dernière photo
 /// de thumbnail,
 /// * on marque le bébé lecon en mode terminé,
-///
-///
-///
 ///
 /// - implémente le panel Leçons,
 /// pour que les bébé lecons en mode terminé
@@ -126,7 +117,7 @@ class _StepCreationState extends State<StepCreation>
         }
 
         /// return the whole screen (appbar + middle + bottomappbar)
-        return wholeScreen(userReport, panel);
+        return wholeScreen(context, userReport, panel);
       },
     );
   }
@@ -690,7 +681,7 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /// la barre en haut de l'écran
-  Widget getTopBar(Report userReport) {
+  Widget getTopBar(Report userReport, BuildContext context) {
     String title;
 
     if (userReport != null) {
@@ -724,7 +715,7 @@ class _StepCreationState extends State<StepCreation>
       leading: backButton(),
       title: titleNavigation(title, userReport),
       actions: <Widget>[
-        delButton(),
+        delButton(userReport, context),
         nextButton(),
       ],
     );
@@ -798,6 +789,47 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
+  Widget delButton(Report userReport, BuildContext context) {
+    return IconButton(
+      icon: Icon(
+        Icons.delete,
+      ),
+      onPressed: () {
+        delButtonActions(userReport, context);
+      },
+    );
+  }
+
+  delButtonActions(Report userReport, BuildContext context) {
+    List<Choice> choices = [
+      Choice("On supprime l'étape.", SUPPRIME_ETAPE),
+      Choice("On remet à zero l'étape.", REMET_A_ZERO_ETAPE),
+    ];
+
+    Future<Choice> userChoice = getUserChoice(
+      context,
+      "Voulez vous supprimer, ou remetre à zero l'étape ?",
+      choices,
+    );
+
+    fnForStepOutcome(userChoice, userReport, context);
+  }
+
+  void fnForStepOutcome(
+      Future<Choice> futureChoice, Report userReport, BuildContext context) {
+    futureChoice.then((choice) async {
+      if (choice == NO_FUTURE_CHOICE) {
+        noStepChoice(choice);
+      } else if (choice.choiceValue == SUPPRIME_ETAPE) {
+        await supprimeEtapeActions(userReport, context);
+      } else if (choice.choiceValue == REMET_A_ZERO_ETAPE) {
+        remetAZeroEtapeActions(userReport);
+      } else {
+        throw Error();
+      }
+    });
+  }
+
   /// les actions a effectuer pour passer
   /// d'une substep à un autre
   Future<void> nextButtonAction() async {
@@ -812,7 +844,9 @@ class _StepCreationState extends State<StepCreation>
       ///   étapes ont été remplies,
       ///   on sauvegarde le contenu
       ///   d u canvas photo
-      if (photoStepComplete() && msgAudioStepComplete() && textStepComplete()) {
+      if (photoStepComplete() &&
+          msgAudioStepComplete() &&
+          theresTextOrEmojis()) {
         await savePhotoCanvas();
 
         incrementSubstep();
@@ -1403,7 +1437,7 @@ class _StepCreationState extends State<StepCreation>
   }
 
   // the whole screen
-  Widget wholeScreen(Report userReport, Widget panel) {
+  Widget wholeScreen(BuildContext context, Report userReport, Widget panel) {
     return WillPopScope(
       onWillPop: () async {
         // You can do some work here.
@@ -1416,7 +1450,7 @@ class _StepCreationState extends State<StepCreation>
         key: _scaffoldKey,
 
         // la barre en haut
-        appBar: getTopBar(userReport),
+        appBar: getTopBar(userReport, context),
 
         // la barre d'icones en bas de l'écran
         // (photo, microphone, text, etc...)
@@ -1775,8 +1809,8 @@ class _StepCreationState extends State<StepCreation>
     /// reset button so we
     /// can upload a new photo
     /*setState(() {
-                                                                                              _createUpload = DONT_CREATE_UP;
-                                                                                            });*/
+                                                                                                                      _createUpload = DONT_CREATE_UP;
+                                                                                                                    });*/
   }
 
   /// if there's an existing photo path,
@@ -1901,7 +1935,20 @@ class _StepCreationState extends State<StepCreation>
   List<Widget> txtEmojiIcons(Report userReport) {
     return [
       addTxtOrEmojiIcon(userReport),
+      deleteLatestTxtEmojiIcon(),
     ];
+  }
+
+  deleteLatestTxtEmojiIcon() {
+    return IconButton(
+      iconSize: ITEM_ICON_SIZE,
+      icon: Icon(
+        Icons.delete,
+        size: BOTTOM_ICON_SIZE,
+        color: Colors.pink,
+      ),
+      onPressed: deleteTxtActions,
+    );
   }
 
   addTxtOrEmojiIcon(Report userReport) {
@@ -1953,7 +2000,7 @@ class _StepCreationState extends State<StepCreation>
     return _recording != NO_AUDIO_FILE;
   }
 
-  bool textStepComplete() {
+  bool theresTextOrEmojis() {
     return _textsAndEmojis.length > 0;
   }
 
@@ -2034,5 +2081,29 @@ class _StepCreationState extends State<StepCreation>
     bblesson.currentStep = choice.choiceValue;
 
     userReport.save();
+  }
+
+  Future<void> supprimeEtapeActions(
+      Report userReport, BuildContext context) async {
+    var babyLessonFaible = userReport.latestBabyLessonSeen;
+    userReport.latestBabyLessonSeen--;
+
+    await deleteLesson(userReport, babyLessonFaible);
+
+    displaySnackbar(_scaffoldKey, "Bébé leçon supprimé.", 2500);
+
+    Navigator.of(context).pop();
+  }
+
+  void remetAZeroEtapeActions(Report userReport) {
+    resetState();
+  }
+
+  void deleteTxtActions() {
+    if (theresTextOrEmojis()) {
+      setState(() {
+        _textsAndEmojis.removeLast();
+      });
+    }
   }
 }

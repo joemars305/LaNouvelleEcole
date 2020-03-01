@@ -244,3 +244,6 @@ const List<Widget> NO_TEXTS_AND_EMOJIS = [];
 const int ADD_TEXT = 0;
 const int ADD_EMOJI = 1;
 const NO_FUTURE_CHOICE = null;
+
+const SUPPRIME_ETAPE = 0;
+const REMET_A_ZERO_ETAPE = 1;
