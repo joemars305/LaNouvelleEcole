@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:quizapp/parts/consts.dart';
 import '../services/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -22,10 +23,9 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
   String _name;
 
   // dans quelle catégorie se situe cette leçon
-  String currentCategory = "Nourriture";
+  String currentCategory = NOURRITURE;
 
-  // toutes les catégories de leçons disponibles
-  List<String> categories = ['Nourriture', 'Logement', 'Energie'];
+  
 
   // utile pour le fonctionnement du TextFormField
   final _formKey = new GlobalKey<FormState>();
@@ -37,8 +37,8 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
         title: new Text(
           nommeTonFetus,
           style: TextStyle(
-            //fontFamily: 'ComingSoon',
-          ),
+              //fontFamily: 'ComingSoon',
+              ),
         ),
       ),
       // showForm() affiche les différents
@@ -70,16 +70,10 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
       child: new TextFormField(
         maxLines: 1,
         keyboardType: TextInputType.text,
-        autofocus: false,
-        style: TextStyle(
-          //fontFamily: 'ComingSoon',
-        ),
+        autofocus: true,
         decoration: new InputDecoration(
             hintText: 'Comment faire/fabriquer/cultiver ...',
             labelText: messageNameBaby,
-            labelStyle: TextStyle(
-              //fontFamily: 'ComingSoon',
-            ),
             icon: new Icon(
               FontAwesomeIcons.smile,
               color: Colors.grey,
@@ -101,17 +95,13 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
             decoration: InputDecoration(
               icon: const Icon(Icons.color_lens),
               labelText: messageCategoryBaby,
-              labelStyle: TextStyle(
-                //fontFamily: 'ComingSoon',
-              ),
+              
             ),
             isEmpty: currentCategory == '',
             child: new DropdownButtonHideUnderline(
               child: new DropdownButton(
                 value: currentCategory,
-                style: TextStyle(
-                  //fontFamily: 'ComingSoon',
-                ),
+                
                 isDense: true,
                 onChanged: (String newValue) {
                   setState(() {
@@ -171,7 +161,7 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
             child: new Text(
               'Crée bébé leçon',
               style: new TextStyle(
-                fontSize: 25.0, 
+                fontSize: 25.0,
                 color: Colors.white,
                 fontFamily: 'Lobster',
               ),
@@ -233,7 +223,7 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
 
       // Remplace l'ancien Report dans la base de données
       // avec ce nouveau Report agrémenté d'un nouveau bébé leçon
-      Global.reportRef.upsert(userReport.toMap());
+      userReport.save();
 
       // dirige toi vers l'écran précédent
       // (celui des bébé leçons)

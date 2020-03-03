@@ -1,21 +1,5 @@
-
-///
-/// - lorsque un upload est terminé
-/// on a 2 choix:
-/// * soit on va a l'etape suivante,
-/// * soit on termine la leçon
-///
-/// - Si on va a l'étape suivante:
-/// * on crée une nouvelle étape
-/// dans la base de données.
-///
-/// - Si on termine la leçon:
-/// * on prend une dernière photo
-/// de thumbnail,
-/// * on marque le bébé lecon en mode terminé,
-///
 /// - implémente le panel Leçons,
-/// pour que les bébé lecons en mode terminé
+/// pour que les bébé lecons matures
 /// soient visible
 ///
 /// - quand on clique une leçon, on va a la dernière
@@ -25,6 +9,7 @@
 /// qui joue une fois automatiquement.
 ///
 /// - implémente un bouton restart audio et play/pause
+///
 ///
 /// - (plus tard) implémente si possible une barre audio
 ///
@@ -79,6 +64,7 @@ class StepCreation extends StatefulWidget {
 
 class _StepCreationState extends State<StepCreation>
     with TickerProviderStateMixin {
+  
   @override
   Widget build(BuildContext context) {
     /// l'event qui remet a zero le state du player
@@ -182,8 +168,8 @@ class _StepCreationState extends State<StepCreation>
   /// 1 pour TEXT_ET_EMOJI
   /// 2 pour MSG_AUDIO
   /// 3 pour INVENTAIRE
-  /// 4 pour UPLOAD_PHOTO
-  /// 5 pour UPLOAD_AUDIO
+  /// 4 pour UPLOAD_FILES
+  /// ...
   int sousEtape = PRENDRE_PHOTO;
 
   /// FONCTION
@@ -389,7 +375,6 @@ class _StepCreationState extends State<StepCreation>
   ///
   /// [] pour NO_TEXTS_AND_EMOJIS
   /// List<Widget> autrement
-  ///
   List<Widget> _textsAndEmojis = [];
 
   /*
@@ -455,6 +440,14 @@ class _StepCreationState extends State<StepCreation>
       return uploadFilesPanel(userReport);
     } else if (sousEtape == INVENTAIRE) {
       return inventairePanel(userReport);
+    } else if (sousEtape == FIN_LECON) {
+      return finLeconPanel(userReport);
+    } else if (sousEtape == PREND_THUMBNAIL_PHOTO) {
+      return prendThumbnailPanel(userReport);
+    } else if (sousEtape == COMPLETE_INVENTORY) {
+      return completeInventoryPanel(userReport);
+    } else if (sousEtape == UPLOAD_THUMBNAIL) {
+      return uploadThumbPanel(userReport);
     } else {
       throw Error();
     }
@@ -633,8 +626,8 @@ class _StepCreationState extends State<StepCreation>
     /// reset button so we
     /// can upload a new photo
     /*setState(() {
-            _createUpload = DONT_CREATE_UP;
-          });*/
+                                          _createUpload = DONT_CREATE_UP;
+                                        });*/
   }
 
   /// l'inventaire d'objets
@@ -716,7 +709,7 @@ class _StepCreationState extends State<StepCreation>
       title: titleNavigation(title, userReport),
       actions: <Widget>[
         delButton(userReport, context),
-        nextButton(),
+        nextButton(userReport),
       ],
     );
   }
@@ -749,7 +742,7 @@ class _StepCreationState extends State<StepCreation>
     return steps
         .asMap()
         .map((etapeIndex, step) {
-          var etapeDescription = "🚀 Etape " + etapeIndex.toString();
+          var etapeDescription = "🚀 Etape " + (etapeIndex + 1).toString();
           var etapeChoisie = Choice(
             etapeDescription,
             etapeIndex,
@@ -778,13 +771,13 @@ class _StepCreationState extends State<StepCreation>
   /// de passer d'une substep a une autre
   /// puis de passer à une autre étape
   /// lorsque toutes les substep sont ok
-  Widget nextButton() {
+  Widget nextButton(Report userReport) {
     return IconButton(
       icon: Icon(
         Icons.arrow_forward,
       ),
       onPressed: () async {
-        await nextButtonAction();
+        await nextButtonAction(userReport);
       },
     );
   }
@@ -832,37 +825,66 @@ class _StepCreationState extends State<StepCreation>
 
   /// les actions a effectuer pour passer
   /// d'une substep à un autre
-  Future<void> nextButtonAction() async {
-    /// qd on est a la derniere etape
+  Future<void> nextButtonAction(Report userReport) async {
+    /// qd on est a l'étape d'upload de photo et audio
     if (sousEtape == UPLOAD_FILES) {
+      nextStepOrLessonOver(userReport);
+    }
+
+    /// qd on est a la dernière étape.
+    else if (sousEtape == lastStep) {
+      Navigator.of(context).pop();
     }
 
     /// qd on est à la sous étape 3,
     /// et qu'on veut passer à la sous étape 4,
     else if (sousEtape == TEXT_EMOJI) {
-      /// - si les 3 premières sous
-      ///   étapes ont été remplies,
-      ///   on sauvegarde le contenu
-      ///   d u canvas photo
-      if (photoStepComplete() &&
-          msgAudioStepComplete() &&
-          theresTextOrEmojis()) {
-        await savePhotoCanvas();
+      incrementIfFirst3StepsCompleted();
+    }
 
-        incrementSubstep();
-      }
+    /// avant de uploader le thumbnail, on réduit sa taille
+    else if (sousEtape == PREND_THUMBNAIL_PHOTO) {
+      await savePhotoCanvas();
+      incrementSubstep();
+    }
 
-      /// - sinon on informe user qu'il doit remplir les
-      ///   3 premières sous étapes avant de continuer
-      else {
-        userDoUrJob();
-      }
+    /// on est a l'étape audio
+    else if (sousEtape == MSG_AUDIO) {
+      stopRecordActions();
+      incrementSubstep();
     }
 
     /// sinon on passe a l'étape suivante
     else {
       incrementSubstep();
     }
+  }
+
+  void nextStepOrLessonOver(Report userReport) {
+    var choices = [
+      Choice("Etape suivante !", ETAP_SUIV),
+      Choice("La leçon est terminée !", FIN_LECON),
+    ];
+
+    Future<Choice> userChoice = getUserChoice(
+      context,
+      "On va à l'étape suivante, ou la leçon est terminée ?",
+      choices,
+    );
+
+    fnForStepOutcomeChoice(userReport, userChoice);
+  }
+
+  void fnForStepOutcomeChoice(Report userReport, Future<Choice> futureChoice) {
+    futureChoice.then((choice) {
+      if (choice == NO_FUTURE_CHOICE) {
+        return noOutcomeChoice();
+      } else if (choice.choiceValue == ETAP_SUIV) {
+        return etapSuivChoice(userReport);
+      } else if (choice.choiceValue == FIN_LECON) {
+        return finLeconChoice(userReport);
+      }
+    });
   }
 
   void userDoUrJob() {
@@ -939,6 +961,9 @@ class _StepCreationState extends State<StepCreation>
     /// on veut une page vierge
     else if (sousEtape >= TEXT_EMOJI) {
       resetState();
+    } else if (sousEtape == MSG_AUDIO) {
+      stopRecordActions();
+      decrementSubstep();
     } else {
       decrementSubstep();
     }
@@ -970,10 +995,16 @@ class _StepCreationState extends State<StepCreation>
       return msgAudioIcons(userReport);
     } else if (sousEtape == UPLOAD_FILES) {
       return uploadFilesIcons();
+    } else if (sousEtape == UPLOAD_THUMBNAIL) {
+      return uploadThumbIcons(userReport);
     } else if (sousEtape == TEXT_EMOJI) {
       return txtEmojiIcons(userReport);
     } else if (sousEtape == INVENTAIRE) {
       return inventaireIcons(userReport);
+    } else if (sousEtape == PREND_THUMBNAIL_PHOTO) {
+      return thumbnailIcons(userReport);
+    } else if (sousEtape == COMPLETE_INVENTORY) {
+      return completeInventaireIcons(userReport);
     } else {
       throw Error();
     }
@@ -1444,6 +1475,8 @@ class _StepCreationState extends State<StepCreation>
         // Returning true allows the pop to happen, returning false prevents it.
         await stopRecordActions();
 
+        controller.dispose();
+
         return true;
       },
       child: Scaffold(
@@ -1809,8 +1842,8 @@ class _StepCreationState extends State<StepCreation>
     /// reset button so we
     /// can upload a new photo
     /*setState(() {
-                                                                                                                      _createUpload = DONT_CREATE_UP;
-                                                                                                                    });*/
+                                                                                                                                                                                                                                          _createUpload = DONT_CREATE_UP;
+                                                                                                                                                                                                                                        });*/
   }
 
   /// if there's an existing photo path,
@@ -2106,4 +2139,129 @@ class _StepCreationState extends State<StepCreation>
       });
     }
   }
+
+  void noOutcomeChoice() {
+    displaySnackbar(_scaffoldKey, "On reste ici pour l'instant !", 2500);
+  }
+
+  void etapSuivChoice(Report userReport) {
+    var lesson = userReport.getLatestBabyLessonSeen();
+
+    lesson.currentStep++;
+    lesson.steps.add(new LessonStep());
+
+    userReport.save();
+
+    resetState();
+  }
+
+  void finLeconChoice(Report userReport) {
+    incrementSubstep();
+  }
+
+  void incrementIfFirst3StepsCompleted() async {
+    /// - si les 3 premières sous
+    ///   étapes ont été remplies,
+    ///   on sauvegarde le contenu
+    ///   d u canvas photo
+    if (photoStepComplete() && msgAudioStepComplete() && theresTextOrEmojis()) {
+      await savePhotoCanvas();
+
+      incrementSubstep();
+    }
+
+    /// - sinon on informe user qu'il doit remplir les
+    ///   3 premières sous étapes avant de continuer
+    else {
+      userDoUrJob();
+    }
+  }
+
+  Widget finLeconPanel(Report userReport) {
+    return null;
+  }
+
+  Widget prendThumbnailPanel(Report userReport) {
+    return prendrePhotoPanel(userReport,
+        "Appuie sur l'appareil photo pour prendre une photo du produit fini.");
+  }
+
+  Widget completeInventoryPanel(Report userReport) {
+    return inventairePanel(userReport);
+  }
+
+  List<Widget> thumbnailIcons(Report userReport) {
+    return prendrePhotoIcons();
+  }
+
+  List<Widget> completeInventaireIcons(Report userReport) {
+    return inventaireIcons(userReport);
+  }
+
+  Widget uploadThumbPanel(Report userReport) {
+    return Uploader(
+      files: [_imageFile],
+      userReport: userReport,
+      uploadMsgs: [
+        "Upload de photo thumbnail en cours...",
+      ],
+      onUploadsDone: [afterThumbPhotoUploaded],
+    );
+  }
+
+  List<Widget> uploadThumbIcons(Report userReport) {
+    return [];
+  }
+
+  afterThumbPhotoUploaded(String newFilePath, String fileUrl, Report userReport) {
+    /// if there's an existing photo path,
+    /// delete the photo at that path in firebase,
+    /// and store the new path,
+    ///
+    /// otherwise just store the new path
+    storeNewThumbFilePath(newFilePath, fileUrl, userReport);
+
+    Navigator.of(context).pop();                                                                                                                                                                                                                              
+  }
+
+  /// if there's an existing photo path,
+  /// delete the photo at that path in firebase,
+  /// and store the new path,
+  ///
+  /// otherwise just store the new path
+  Future<void> storeNewThumbFilePath(
+      String newfilePath, String fileUrl, Report userReport) async {
+    var oldfilePath =
+        userReport.getLatestBabyLessonSeen().thumbnailPath;
+
+    if (oldfilePath == NO_DATA) {
+      storeThumbPathAndMatureBaby(newfilePath, fileUrl, userReport);
+    } 
+    
+    else if (oldfilePath.length > 0) {
+      await deleteFile(oldfilePath);
+      storeThumbPathAndMatureBaby(newfilePath, fileUrl, userReport);
+    } 
+    
+    else {
+      throw Error();
+    }
+  }
+
+  void storeThumbPathAndMatureBaby(String newfilePath, String fileUrl, Report userReport) {
+    /// get the current step data
+    var babyLesson = userReport.getLatestBabyLessonSeen();
+    
+
+    /// store new paths
+    babyLesson.thumbnailPath = newfilePath;
+    babyLesson.thumbnailUrl = fileUrl;
+
+    /// the lesson is ready to be displayed in the Lecons panel
+    babyLesson.isMature = MATURE;
+    
+    /// save data
+    userReport.save();
+  }
 }
+

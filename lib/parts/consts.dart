@@ -26,14 +26,16 @@ const NO_TEXT = null;
 
 /// howManySubsteps est la quantité
 /// de sous étapes à effectuer
-const howManySubsteps = 5;
+const howManySubsteps = 8;
+
+const lastStep = howManySubsteps - 1;
 
 /// represente l'etape prendre une photo
 const PRENDRE_PHOTO = 0;
 
 /// représente l'étape text et emoji
 const TEXT_EMOJI = 2;
-
+ 
 /// represente l'etape MESSAGE AUDIO
 const MSG_AUDIO = 1;
 
@@ -44,8 +46,12 @@ const INVENTAIRE = 3;
 /// represente l'etape UPLOAD_PHOTO
 const UPLOAD_FILES = 4;
 
-/// represente l'etape UPLOAD_AUDIO
-//const UPLOAD_AUDIO = 5;
+/// represente les deux étapes finales,
+/// ou nous prenons une photo du produit fini, 
+/// puis on ajoute des infos approvisionnement
+const PREND_THUMBNAIL_PHOTO = 5;
+const COMPLETE_INVENTORY = 6;
+const UPLOAD_THUMBNAIL = 7;
 
 /// IS_RECORDING représente si on est en train, ou pas,
 /// d'enregistrer un message audio
@@ -247,3 +253,19 @@ const NO_FUTURE_CHOICE = null;
 
 const SUPPRIME_ETAPE = 0;
 const REMET_A_ZERO_ETAPE = 1;
+
+const ETAP_SUIV = 0;
+const FIN_LECON = 1;
+
+const  NOT_MATURE = false;
+const  MATURE = true;
+
+ 
+// toutes les catégories de leçons disponibles
+const NOURRITURE = 'Nourriture';
+const LOGEMENT = 'Logement';
+const ENERGIE = 'Energie';
+const TOUTES_CATEGORIES = 'Toutes catégories';
+const List<String> categories = [NOURRITURE, LOGEMENT, ENERGIE];
+
+

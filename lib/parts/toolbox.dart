@@ -282,10 +282,13 @@ Widget msg(String msg) {
   );
 }
 
-deleteLessonData(Report userReport, int index) async {
+Future deleteLessonData(Report userReport, int index) async {
+
   var lesson = userReport.babyLessons[index];
 
-  var result = await lesson.deleteLessonData();
+  var result = lesson.deleteLessonData();
+
+
 
   return result;
 }

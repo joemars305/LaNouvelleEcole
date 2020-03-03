@@ -2,16 +2,12 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:quizapp/parts/parts.dart';
 import 'package:quizapp/services/services.dart';
 
-
-
-
-
 class Option {
   String value;
   String detail;
   bool correct;
 
-  Option({ this.correct, this.value, this.detail });
+  Option({this.correct, this.value, this.detail});
   Option.fromMap(Map data) {
     value = data['value'];
     detail = data['detail'] ?? '';
@@ -19,21 +15,21 @@ class Option {
   }
 }
 
-
 class Question {
   String text;
   List<Option> options;
-  Question({ this.options, this.text });
+  Question({this.options, this.text});
 
   Question.fromMap(Map data) {
     text = data['text'] ?? '';
-    options = (data['options'] as List ?? []).map((v) => Option.fromMap(v)).toList();
+    options =
+        (data['options'] as List ?? []).map((v) => Option.fromMap(v)).toList();
   }
 }
 
 ///// Database Collections
 
-class Quiz { 
+class Quiz {
   String id;
   String title;
   String description;
@@ -41,30 +37,35 @@ class Quiz {
   String topic;
   List<Question> questions;
 
-  Quiz({ this.title, this.questions, this.video, this.description, this.id, this.topic });
+  Quiz(
+      {this.title,
+      this.questions,
+      this.video,
+      this.description,
+      this.id,
+      this.topic});
 
   factory Quiz.fromMap(Map data) {
     return Quiz(
-      id: data['id'] ?? '',
-      title: data['title'] ?? '',
-      topic: data['topic'] ?? '',
-      description: data['description'] ?? '',
-      video: data['video'] ?? '',
-      questions: (data['questions'] as List ?? []).map((v) => Question.fromMap(v)).toList()
-    );
+        id: data['id'] ?? '',
+        title: data['title'] ?? '',
+        topic: data['topic'] ?? '',
+        description: data['description'] ?? '',
+        video: data['video'] ?? '',
+        questions: (data['questions'] as List ?? [])
+            .map((v) => Question.fromMap(v))
+            .toList());
   }
-  
 }
-
 
 class Topic {
   final String id;
   final String title;
-  final  String description;
+  final String description;
   final String img;
   final List<Quiz> quizzes;
 
-  Topic({ this.id, this.title, this.description, this.img, this.quizzes });
+  Topic({this.id, this.title, this.description, this.img, this.quizzes});
 
   factory Topic.fromMap(Map data) {
     return Topic(
@@ -72,34 +73,34 @@ class Topic {
       title: data['title'] ?? '',
       description: data['description'] ?? '',
       img: data['img'] ?? 'default.png',
-      quizzes:  (data['quizzes'] as List ?? []).map((v) => Quiz.fromMap(v)).toList(), //data['quizzes'],
+      quizzes: (data['quizzes'] as List ?? [])
+          .map((v) => Quiz.fromMap(v))
+          .toList(), //data['quizzes'],
     );
   }
-
 }
 
-
- 
 class Report {
   String uid;
   int total;
   List<BabyLesson> babyLessons;
   Map topics;
   int latestBabyLessonSeen;
-  
-  Report({ 
-    this.uid, 
-    this.total, 
-    this.babyLessons, 
-    this.topics, 
-    this.latestBabyLessonSeen 
-  });
+
+  Report(
+      {this.uid,
+      this.total,
+      this.babyLessons,
+      this.topics,
+      this.latestBabyLessonSeen});
 
   factory Report.fromMap(Map data) {
     return Report(
       uid: data['uid'] ?? '',
       total: data['total'] ?? 0,
-      babyLessons: (data['babyLessons'] as List ?? []).map((v) => BabyLesson.fromMap(v)).toList(),
+      babyLessons: (data['babyLessons'] as List ?? [])
+          .map((v) => BabyLesson.fromMap(v))
+          .toList(),
       topics: data['topics'] ?? {},
       latestBabyLessonSeen: data['latestBabyLessonSeen'] ?? 0,
     );
@@ -127,7 +128,6 @@ class Report {
   void save() {
     Global.reportRef.upsert(toMap());
   }
-
 }
 
 class BabyLesson {
@@ -139,32 +139,52 @@ class BabyLesson {
   List<LessonStep> steps;
   int currentStep;
   List<Item> items;
+  bool isMature;
+  String thumbnailPath;
+  String thumbnailUrl;
 
-  BabyLesson({ this.name, this.createdBy, this.creationDate, this.category, this.id, this.steps, this.currentStep, this.items });
-
+  BabyLesson(
+      {this.name,
+      this.createdBy,
+      this.creationDate,
+      this.category,
+      this.id,
+      this.steps,
+      this.currentStep,
+      this.items,
+      this.isMature,
+      this.thumbnailPath,
+      this.thumbnailUrl});
 
   factory BabyLesson.fromMap(Map data) {
     return BabyLesson(
+      thumbnailPath: data['thumbnailFilePath'] ?? NO_DATA,
+      thumbnailUrl: data['thumbnailFileUrl'] ?? NO_DATA,
+      isMature: data['isMature'] ?? NOT_MATURE,
       name: data['name'],
       createdBy: data['createdBy'],
       creationDate: data['creationDate'],
       category: data['category'],
       id: data['id'],
-      steps: (data['steps'] as List ?? [new LessonStep()]).map((v) => LessonStep.fromMap(v)).toList(),
+      steps: (data['steps'] as List ?? [new LessonStep()])
+          .map((v) => LessonStep.fromMap(v))
+          .toList(),
       currentStep: data['currentStep'] ?? 0,
       items: (data['items'] as List ?? []).map((v) => Item.fromMap(v)).toList(),
     );
   }
 
-  Future deleteLessonData() async {
-    return steps.map((step) async {
-      
+  void deleteLessonData() async {
+    var _storage = FirebaseStorage(
+      storageBucket: storageBucketUri,
+    );
+
+    await _storage.ref().child(thumbnailPath).delete();
+
+    for (var i = 0; i < steps.length; i++) {
+      var step = steps[i];
       var photopath = step.photoFilePath;
       var audiopath = step.audioFilePath;
-
-      var _storage = FirebaseStorage(
-        storageBucket: storageBucketUri,
-      );
 
       print('photo path during deletion');
       print(photopath);
@@ -173,19 +193,20 @@ class BabyLesson {
       print(audiopath);
 
       await _storage.ref().child(audiopath).delete();
-      
-      return await _storage.ref().child(photopath).delete();
-    });
+
+      await _storage.ref().child(photopath).delete();
+    }
   }
 
   LessonStep getCurrentStep() {
     return steps[currentStep];
   }
 
-
-
   Map toMap() {
     return {
+      'thumbnailFilePath': thumbnailPath ?? null,
+      'thumbnailFileUrl': thumbnailUrl ?? null,
+      'isMature': isMature ?? NOT_MATURE,
       'name': name ?? '',
       'createdBy': createdBy ?? '',
       'creationDate': creationDate ?? '',
@@ -198,9 +219,6 @@ class BabyLesson {
   }
 }
 
-
-
-
 class LessonStep {
   String audioFilePath;
   String audioFileUrl;
@@ -208,17 +226,13 @@ class LessonStep {
   String photoFileUrl;
   int currentSubstep;
 
-
-  
-
-  LessonStep({ 
+  LessonStep({
     this.audioFilePath,
     this.audioFileUrl,
     this.photoFilePath,
-    this.photoFileUrl, 
-    this.currentSubstep, 
+    this.photoFileUrl,
+    this.currentSubstep,
   });
-
 
   factory LessonStep.fromMap(Map data) {
     return LessonStep(
@@ -245,14 +259,16 @@ class LessonStep {
   }
 }
 
-
 class Item {
   String name;
   int qty;
   //List<Item> items;
 
-  Item({ this.name, this.qty, /*this.items*/ });
-
+  Item({
+    this.name,
+    this.qty,
+    /*this.items*/
+  });
 
   factory Item.fromMap(Map data) {
     return Item(

@@ -158,7 +158,7 @@ class BabyLessonsScreen extends StatelessWidget {
           onDismissed: (DismissDirection direction) async {
             await deleteLesson(userReport, index);
           },
-          child: BabyLessonCard(userReport: userReport, index: index),
+          child: babyLessonCard(context, userReport, index),
           key: UniqueKey(),
           direction: DismissDirection.horizontal,
         );
@@ -166,27 +166,13 @@ class BabyLessonsScreen extends StatelessWidget {
     );
   }
 
-  
-}
-
-//// le layout d'un bébé leçon individuel
-/// dans la liste de bébé leçons
-class BabyLessonCard extends StatelessWidget {
-  // les données utilisateur
-  final Report userReport;
-
-  // la position du bébé leçon dans la liste de bébé leçons
-  final int index;
-
-  BabyLessonCard({this.userReport, this.index});
-
-  @override
-  Widget build(BuildContext context) {
-    // grab the bébé leçon by the umbilical cord
-    BabyLesson babyLesson = userReport.babyLessons[index];
+  Widget babyLessonCard(BuildContext context, Report userReport, int index) {
+    var babyLesson = userReport.babyLessons[index];
     FirebaseUser user = Provider.of<FirebaseUser>(context);
+    var thumbnailUrl = babyLesson.thumbnailUrl;
 
     return LessonItem(
+      thumbnailUrl: thumbnailUrl,
       photoUrl: user.photoUrl,
       name: babyLesson.name,
       createdBy: babyLesson.createdBy,
@@ -206,5 +192,5 @@ class BabyLessonCard extends StatelessWidget {
         );
       },
     );
-  }
+  }  
 }
