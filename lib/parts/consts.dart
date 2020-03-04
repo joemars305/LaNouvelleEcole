@@ -265,7 +265,6 @@ const  MATURE = true;
 const NOURRITURE = 'Nourriture';
 const LOGEMENT = 'Logement';
 const ENERGIE = 'Energie';
-const TOUTES_CATEGORIES = 'Toutes catégories';
 const List<String> categories = [NOURRITURE, LOGEMENT, ENERGIE];
 
 

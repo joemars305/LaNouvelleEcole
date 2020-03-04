@@ -1,6 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:quizapp/parts/consts.dart';
 import 'package:quizapp/parts/toolbox.dart';
+import 'package:quizapp/shared/bottom_nav.dart';
+import 'package:quizapp/shared/lesson_item.dart';
 import '../services/services.dart';
 
 class TopicsScreen extends StatefulWidget {
@@ -11,32 +15,44 @@ class TopicsScreen extends StatefulWidget {
 class _TopicsScreenState extends State<TopicsScreen> {
   /// _category représente la catégorie de
   /// leçon à afficher
-  String _category = TOUTES_CATEGORIES;
+  String _category = NOURRITURE;
+
+  /// nous permet d'afficher des snackbar
+  final _key = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<Report>(
       stream: Global.reportRef.documentStream,
       builder: (BuildContext context, AsyncSnapshot<Report> snapshot) {
+        var panel;
+
         /// if we received the userReport
         if (snapshot.hasData) {
           /// affiche la liste de leçons,
           /// ou un NoDataMessage
-          return listOfLessons(snapshot.data);
+          panel = listOfLessons(snapshot.data);
         }
 
         /// if something got wrong trying
         /// to get userReport
         else if (snapshot.hasError) {
           /// inform the user about it
-          return errorMsg();
+          panel = errorMsg();
         }
 
         /// if we're loading userReport
         else {
           /// tell johnny to wait
-          return loadingMsg();
+          panel = loadingMsg();
         }
+
+        return Scaffold(
+          key: _key,
+          appBar: topBar(),
+          body: panel,
+          bottomNavigationBar: AppBottomNav(),
+        );
       },
     );
   }
@@ -109,10 +125,7 @@ class _TopicsScreenState extends State<TopicsScreen> {
   Widget displayLessons(Report userReport) {
     var matureFilteredLessons = getMatureFilteredLessons(userReport);
 
-    return Scaffold(
-      appBar: topBar(userReport),
-      body: listViewLessons(matureFilteredLessons),
-    );
+    return listViewLessons(matureFilteredLessons);
   }
 
   Widget theresNoLessons(Report userReport) {
@@ -123,16 +136,16 @@ class _TopicsScreenState extends State<TopicsScreen> {
     );
   }
 
-  topBar(Report userReport) {
+  topBar() {
     return AppBar(
-      title: titleNavigation(userReport),
+      title: titleNavigation(),
       actions: <Widget>[
-        profileButton(userReport),
+        profileButton(),
       ],
     );
   }
 
-  Widget titleNavigation(Report userReport) {
+  Widget titleNavigation() {
     return new GestureDetector(
       onTap: () {
         changeCategoryActions();
@@ -141,9 +154,32 @@ class _TopicsScreenState extends State<TopicsScreen> {
     );
   }
 
-  listViewLessons(List<BabyLesson> matureFilteredLessons) {}
+  listViewLessons(List<BabyLesson> matureFilteredLessons) {
+    return ListView.builder(
+      // combien d' objets
+      itemCount: matureFilteredLessons.length,
+      // crée une liste d'items
+      // qu'on peut supprimer en swipant
+      itemBuilder: (context, index) {
+        var babyLesson = matureFilteredLessons[index];
+        var user = Provider.of<FirebaseUser>(context);
+        var thumbnailUrl = babyLesson.thumbnailUrl;
 
-  profileButton(Report userReport) {
+        return LessonItem(
+          thumbnailUrl: thumbnailUrl,
+          photoUrl: user.photoUrl,
+          name: babyLesson.name,
+          createdBy: babyLesson.createdBy,
+          creationDate: babyLesson.creationDate,
+          onTap: () {
+            print("coké");
+          },
+        );
+      },
+    );
+  }
+
+  profileButton() {
     return IconButton(
       icon: Icon(
         Icons.supervised_user_circle,
@@ -155,6 +191,10 @@ class _TopicsScreenState extends State<TopicsScreen> {
   }
 
   changeCategoryActions() {
+    var choices = categories.map((category) {
+      return Choice(category, category);
+    }).toList();
+
     Future<Choice> userChoice = getUserChoice(
       context,
       "Tu veux voir les leçons de quelle catégorie ?",
@@ -167,10 +207,20 @@ class _TopicsScreenState extends State<TopicsScreen> {
   void fnForCategoryChoice(Future<Choice> futureChoice) {
     futureChoice.then((choice) {
       if (choice == NO_FUTURE_CHOICE) {
-        return noChoice();
+        return noCategoryChoice();
       } else {
-        return doSomethingWChoice();
+        return handleCategoryChange(choice);
       }
     });
+  }
+
+  void handleCategoryChange(Choice choice) {
+    setState(() {
+      _category = choice.choiceValue;
+    });
+  }
+
+  void noCategoryChoice() {
+    displaySnackbar(_key, "On ne change pas de catégorie !", 2500);
   }
 }

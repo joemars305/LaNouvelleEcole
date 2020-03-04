@@ -21,6 +21,6 @@ class Global {
   // Firestore References for Writes and Reads
   static final Collection<Topic> topicsRef = Collection<Topic>(path: 'topics');
   static final UserData<Report> reportRef = UserData<Report>(collection: 'reports'); 
-  static final Collection<BabyLesson> babiesRef = Collection<BabyLesson>(path: 'baby_lessons');
+  static final Collection<Report> reportsRef = Collection<Report>(path: 'reports');
   
 }
