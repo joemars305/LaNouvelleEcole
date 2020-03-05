@@ -2228,7 +2228,7 @@ class _StepCreationState extends State<StepCreation>
     var oldfilePath = babyLesson.thumbnailPath;
 
     /// si il existe une thumbnail existante, supprime la
-    if (oldfilePath.length != NO_DATA) {
+    if (oldfilePath != NO_DATA) {
       await deleteFile(oldfilePath);
     }
 
