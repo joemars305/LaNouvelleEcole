@@ -67,6 +67,7 @@ class UserData<T> {
 
     return Observable(_auth.onAuthStateChanged).switchMap((user) {
       if (user != null) {
+       
           Document<T> doc = Document<T>(path: '$collection/${user.uid}'); 
           return doc.streamData();
       } else {

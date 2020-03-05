@@ -2238,6 +2238,8 @@ class _StepCreationState extends State<StepCreation>
     /// the lesson is ready to be displayed in the Lecons panel
     makeLessonMature(babyLesson);
 
+    print(userReport.toString());
+
     /// save data
     userReport.save();
   }

@@ -11,11 +11,7 @@ import '../shared/shared.dart';
 class BabyLessonsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: topBar(context),
-      /** affiche nos bébés leçons */
-      body: listOfLessonsOrMessage(),
-    );
+    return listOfLessonsOrMessage();
   }
 
   /// si il y a aucun bébé leçon existant,
@@ -30,21 +26,25 @@ class BabyLessonsScreen extends StatelessWidget {
         */
         stream: Global.reportRef.documentStream,
         builder: (context, snapshot) {
+          var panel;
+
           /** Si il y une erreur durant la 
            * récup du document utilisateur,
            * affiche l'erreur */
           if (snapshot.hasError) {
-            return userDataLoadingError(snapshot);
+            panel = userDataLoadingError(snapshot);
           }
 
           switch (snapshot.connectionState) {
             /** si stream: null, ce message s'affiche */
             case ConnectionState.none:
-              return noUserDataMsg();
+              panel = noUserDataMsg();
+              break;
 
             /** s'affiche lorsque les données sont en cours de chargement */
             case ConnectionState.waiting:
-              return userDataLoadingMsg();
+              panel = userDataLoadingMsg();
+              break;
 
             /** s'affiche lorsque les données sont chargées */
             default:
@@ -54,6 +54,8 @@ class BabyLessonsScreen extends StatelessWidget {
                */
               var userData = snapshot.data;
 
+              print(userData);
+
               /** la liste de bébé leçons 
                * de l'utilisateur */
               var babyLessons = userData.babyLessons;
@@ -61,16 +63,22 @@ class BabyLessonsScreen extends StatelessWidget {
               /** Si l'utilisateur à crée au moins 1 bébé leçon... */
               if (babyLessons.length > 0) {
                 /** affiche un liste des bébé leçons */
-                return listOfLessons(userData);
+                panel = listOfLessons(userData);
               }
               /** si l'utilisateur n'a pas crée de bébé leçons... */
               else {
                 /** affiche un message invitant l'utilisateur
                  * à créer un bébé leçon
                  */
-                return noLessonsMessage(context);
+                panel = noLessonsMessage(context);
               }
           }
+
+          return Scaffold(
+            appBar: topBar(context),
+            /** affiche nos bébés leçons */
+            body: panel,
+          );
         });
   }
 
@@ -192,5 +200,5 @@ class BabyLessonsScreen extends StatelessWidget {
         );
       },
     );
-  }  
+  }
 }
