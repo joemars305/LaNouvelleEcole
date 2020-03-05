@@ -22,26 +22,47 @@ class _TopicsScreenState extends State<TopicsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Report>(
-      stream: Global.reportRef.documentStream,
-      builder: (BuildContext context, AsyncSnapshot<Report> snapshot) {
+    return StreamBuilder<List<Report>>(
+      initialData: [],
+      stream: Global.reportsRef.streamData(),
+      builder: (BuildContext context, AsyncSnapshot<List<Report>> snapshot) {
+        /// le contenu de l'écran sous la top bar
         var panel;
 
-        /// if we received the userReport
+        /// if there's data, and there's
+        /// mature lessons
         if (snapshot.hasData) {
-          /// affiche la liste de leçons,
-          /// ou un NoDataMessage
-          panel = listOfLessons(snapshot.data);
+          /// tous les Report utilisateurs
+          var userReports = snapshot.data;
+
+          /// une liste de leçons a afficher
+          List<BabyLesson> matureLessons =
+              getMatureFilteredLessons(userReports);
+
+          /// si il existe des leçons matures
+          /// parmi les bébé leçons des utilisateurs
+          /// affiche ces leçons,
+          if (theresLessonsToDisplay(userReports)) {
+            panel = listViewLessons(matureLessons);
+          }
+
+          /// sinon, affiche un
+          /// NoDataMessage
+          else {
+            panel = theresNoLessons();
+          }
         }
 
         /// if something got wrong trying
-        /// to get userReport
+        /// to get userReports
         else if (snapshot.hasError) {
+          print(snapshot.error);
+          
           /// inform the user about it
           panel = errorMsg();
         }
 
-        /// if we're loading userReport
+        /// if we're loading userReports
         else {
           /// tell johnny to wait
           panel = loadingMsg();
@@ -55,18 +76,6 @@ class _TopicsScreenState extends State<TopicsScreen> {
         );
       },
     );
-  }
-
-  /// si il existe des lecons à afficher,
-  /// affiche les,
-  ///
-  /// sinon, affiche un NoDataMessage
-  Widget listOfLessons(Report userReport) {
-    if (theresLessonsToDisplay(userReport)) {
-      return displayLessons(userReport);
-    } else {
-      return theresNoLessons(userReport);
-    }
   }
 
   /// affiche un message sur fond violet
@@ -93,9 +102,10 @@ class _TopicsScreenState extends State<TopicsScreen> {
 
   //// si il existe 1 ou plusieurs bébé leçons
   /// matures, il faut les afficher
-  bool theresLessonsToDisplay(Report userReport) {
-    /// the mature baby lessons of the correct category
-    List matureFilteredLessons = getMatureFilteredLessons(userReport);
+  bool theresLessonsToDisplay(List<Report> userReports) {
+    /// the mature baby lessons of the correct category,
+    /// for all users
+    List matureFilteredLessons = getMatureFilteredLessons(userReports);
 
     /// how many of them exist ?
     var qtyMatureBabyLessons = matureFilteredLessons.length;
@@ -103,32 +113,27 @@ class _TopicsScreenState extends State<TopicsScreen> {
     return qtyMatureBabyLessons > 0;
   }
 
-  List<BabyLesson> getMatureLessons(Report userReport) {
-    return userReport.babyLessons.where((babyLesson) {
-      return babyLesson.isMature;
-    }).toList();
+  /// on veut tous les bébé leçons matures
+  /// de tous les utilisateurs de la communauté,
+  /// seulement si ils sont de la bonne catégorie
+  List<BabyLesson> getMatureFilteredLessons(List<Report> userReports) {
+    /// a list of the all the baby lessons of all the users
+    List<BabyLesson> allBabyLessons = getAllBabyLessons(userReports);
+
+    /// filter this shit out
+    return filteredBabyLessons(allBabyLessons);
   }
 
-  List<BabyLesson> getMatureFilteredLessons(Report userReport) {
-    return userReport.babyLessons.where((babyLesson) {
-      return babyLesson.isMature && babyLesson.category == _category;
-    }).toList();
+  List<BabyLesson> getAllBabyLessons(List<Report> userReports) {
+    return userReports
+        .map((userReport) {
+          return userReport.babyLessons;
+        })
+        .expand((listOfBabies) => listOfBabies)
+        .toList();
   }
 
-  /// affiche les bébé leçons matures,
-  /// classés par catégorie.
-  ///
-  ///
-  /// par défaut, on affiche tout,
-  /// mais on peut classer les leçons
-  /// par catégorie. topbar
-  Widget displayLessons(Report userReport) {
-    var matureFilteredLessons = getMatureFilteredLessons(userReport);
-
-    return listViewLessons(matureFilteredLessons);
-  }
-
-  Widget theresNoLessons(Report userReport) {
+  Widget theresNoLessons() {
     return centeredMsg(
       "assets/icon.png",
       "Il n'existe pas encore de leçons.",
@@ -222,5 +227,11 @@ class _TopicsScreenState extends State<TopicsScreen> {
 
   void noCategoryChoice() {
     displaySnackbar(_key, "On ne change pas de catégorie !", 2500);
+  }
+
+  List<BabyLesson> filteredBabyLessons(List<BabyLesson> allBabyLessons) {
+    return allBabyLessons.where((babyLesson) {
+      return babyLesson.isMature && babyLesson.category == _category;
+    }).toList();
   }
 }

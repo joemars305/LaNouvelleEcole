@@ -64,7 +64,6 @@ class StepCreation extends StatefulWidget {
 
 class _StepCreationState extends State<StepCreation>
     with TickerProviderStateMixin {
-  
   @override
   Widget build(BuildContext context) {
     /// l'event qui remet a zero le state du player
@@ -2213,55 +2212,43 @@ class _StepCreationState extends State<StepCreation>
     return [];
   }
 
-  afterThumbPhotoUploaded(String newFilePath, String fileUrl, Report userReport) {
-    /// if there's an existing photo path,
-    /// delete the photo at that path in firebase,
-    /// and store the new path,
-    ///
-    /// otherwise just store the new path
-    storeNewThumbFilePath(newFilePath, fileUrl, userReport);
+  afterThumbPhotoUploaded(
+      String newFilePath, String fileUrl, Report userReport) {
+    /// sauvegarde paths thumbnail, sets baby lesson as mature,
+    /// and store the baby lesson among lessons
+    saveLesson(newFilePath, fileUrl, userReport);
 
-    Navigator.of(context).pop();                                                                                                                                                                                                                              
+    Navigator.of(context).pop();
   }
 
-  /// if there's an existing photo path,
-  /// delete the photo at that path in firebase,
-  /// and store the new path,
-  ///
-  /// otherwise just store the new path
-  Future<void> storeNewThumbFilePath(
+  Future<void> saveLesson(
       String newfilePath, String fileUrl, Report userReport) async {
-    var oldfilePath =
-        userReport.getLatestBabyLessonSeen().thumbnailPath;
-
-    if (oldfilePath == NO_DATA) {
-      storeThumbPathAndMatureBaby(newfilePath, fileUrl, userReport);
-    } 
-    
-    else if (oldfilePath.length > 0) {
-      await deleteFile(oldfilePath);
-      storeThumbPathAndMatureBaby(newfilePath, fileUrl, userReport);
-    } 
-    
-    else {
-      throw Error();
-    }
-  }
-
-  void storeThumbPathAndMatureBaby(String newfilePath, String fileUrl, Report userReport) {
-    /// get the current step data
+    /// get the baby lesson to become adult
     var babyLesson = userReport.getLatestBabyLessonSeen();
-    
+    var oldfilePath = babyLesson.thumbnailPath;
+
+    /// si il existe une thumbnail existante, supprime la
+    if (oldfilePath.length > 0) {
+      await deleteFile(oldfilePath);
+    }
 
     /// store new paths
-    babyLesson.thumbnailPath = newfilePath;
-    babyLesson.thumbnailUrl = fileUrl;
+    storeThumbPaths(babyLesson, newfilePath, fileUrl);
 
     /// the lesson is ready to be displayed in the Lecons panel
-    babyLesson.isMature = MATURE;
-    
+    makeLessonMature(babyLesson);
+
     /// save data
     userReport.save();
   }
-}
 
+  void makeLessonMature(BabyLesson babyLesson) {
+    babyLesson.isMature = MATURE;
+  }
+
+  void storeThumbPaths(
+      BabyLesson babyLesson, String newfilePath, String fileUrl) {
+    babyLesson.thumbnailPath = newfilePath;
+    babyLesson.thumbnailUrl = fileUrl;
+  }
+}
