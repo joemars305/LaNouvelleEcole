@@ -23,7 +23,6 @@ class _TopicsScreenState extends State<TopicsScreen> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Report>>(
-      initialData: [],
       stream: Global.reportsRef.streamData(),
       builder: (BuildContext context, AsyncSnapshot<List<Report>> snapshot) {
         /// le contenu de l'écran sous la top bar
