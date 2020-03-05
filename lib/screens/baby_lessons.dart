@@ -178,10 +178,11 @@ class BabyLessonsScreen extends StatelessWidget {
     var babyLesson = userReport.babyLessons[index];
     FirebaseUser user = Provider.of<FirebaseUser>(context);
     var thumbnailUrl = babyLesson.thumbnailUrl;
+    var userIconUrl = user.photoUrl;
 
     return LessonItem(
       thumbnailUrl: thumbnailUrl,
-      photoUrl: user.photoUrl,
+      photoUrl: userIconUrl,
       name: babyLesson.name,
       createdBy: babyLesson.createdBy,
       creationDate: babyLesson.creationDate,

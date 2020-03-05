@@ -25,8 +25,6 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
   // dans quelle catégorie se situe cette leçon
   String currentCategory = NOURRITURE;
 
-  
-
   // utile pour le fonctionnement du TextFormField
   final _formKey = new GlobalKey<FormState>();
 
@@ -95,13 +93,11 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
             decoration: InputDecoration(
               icon: const Icon(Icons.color_lens),
               labelText: messageCategoryBaby,
-              
             ),
             isEmpty: currentCategory == '',
             child: new DropdownButtonHideUnderline(
               child: new DropdownButton(
                 value: currentCategory,
-                
                 isDense: true,
                 onChanged: (String newValue) {
                   setState(() {
@@ -212,10 +208,12 @@ class _CreateFetusPageState extends State<CreateFetusPage> {
       // sous forme d'objet
       // (voir models.dart pour plus de détails sur BabyLesson)
       BabyLesson newLesson = new BabyLesson(
-          name: _name,
-          createdBy: user.displayName,
-          creationDate: formattedDate,
-          category: currentCategory);
+        name: _name,
+        createdBy: user.displayName,
+        creationDate: formattedDate,
+        category: currentCategory,
+        userIconUrl: user.photoUrl,
+      );
 
       // ajoute ce bébé leçon dans la liste
       // de bébé leçons du Report de l'utilisateur

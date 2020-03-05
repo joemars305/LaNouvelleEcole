@@ -37,11 +37,13 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:audio_recorder/audio_recorder.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import 'package:quizapp/parts/parts.dart';
 import 'package:quizapp/services/services.dart';
 import 'package:quizapp/shared/photo_canvas.dart';
@@ -142,6 +144,16 @@ class _StepCreationState extends State<StepCreation>
   /// null pour NO_PHOTO
   /// File pour PHOTO
   File _imageFile = NO_PHOTO;
+
+  /*
+  handleImageFile() {
+    if (_imageFile == NO_PHOTO) {
+      noPhoto();
+    } else {
+      photo();
+    }
+  }
+  */
 
   /// PHOTO_SIZE représente la taille
   /// de la photo de l'étape.
@@ -410,6 +422,27 @@ class _StepCreationState extends State<StepCreation>
   }
   */
 
+  static const bool SHOW_NEXT_BUTTON = true;
+  static const bool HIDE_NEXT_BUTTON = false;
+  bool _showNextButton = SHOW_NEXT_BUTTON;
+
+  /*
+  showNextBtn() {
+    if (_showNextButton == HIDE_NEXT_BUTTON) {
+
+    }
+
+    else if (_showNextButton == SHOW_NEXT_BUTTON) {
+
+    }
+
+    else {
+      throw Error();
+    }
+  }
+  
+  */
+
   /// nous permet de supprimer une photo
   /// stockée dans firebase storage
   final FirebaseStorage _storage =
@@ -485,7 +518,7 @@ class _StepCreationState extends State<StepCreation>
   Widget noRecordingAudioPanel(Report userReport) {
     String msg = noRecordingMsg();
 
-    return prendrePhotoPanel(userReport, msg);
+    return centeredMsg("assets/icon.png", msg, Colors.purpleAccent);
   }
 
   /// quel instructions donner a l'user durant étape audio
@@ -708,7 +741,7 @@ class _StepCreationState extends State<StepCreation>
       title: titleNavigation(title, userReport),
       actions: <Widget>[
         delButton(userReport, context),
-        nextButton(userReport),
+        hideOrShowNextButton(userReport),
       ],
     );
   }
@@ -830,6 +863,11 @@ class _StepCreationState extends State<StepCreation>
       nextStepOrLessonOver(userReport);
     }
 
+    /// qd on va vers l'upload de thumbnail
+    else if (sousEtape == COMPLETE_INVENTORY) {
+      incrementIfThumbPhotoTaken();
+    }
+
     /// qd on est a la dernière étape.
     else if (sousEtape == lastStep) {
       Navigator.of(context).pop();
@@ -850,6 +888,7 @@ class _StepCreationState extends State<StepCreation>
     /// on est a l'étape audio
     else if (sousEtape == MSG_AUDIO) {
       stopRecordActions();
+      hideNextButton();
       incrementSubstep();
     }
 
@@ -959,7 +998,7 @@ class _StepCreationState extends State<StepCreation>
     /// on reset le state,
     /// on veut une page vierge
     else if (sousEtape >= TEXT_EMOJI) {
-      resetState();
+      resetState(PRENDRE_PHOTO);
     } else if (sousEtape == MSG_AUDIO) {
       stopRecordActions();
       decrementSubstep();
@@ -1841,8 +1880,8 @@ class _StepCreationState extends State<StepCreation>
     /// reset button so we
     /// can upload a new photo
     /*setState(() {
-                                                                                                                                                                                                                                          _createUpload = DONT_CREATE_UP;
-                                                                                                                                                                                                                                        });*/
+                                                                                                                                                                                                                                                              _createUpload = DONT_CREATE_UP;
+                                                                                                                                                                                                                                                            });*/
   }
 
   /// if there's an existing photo path,
@@ -1914,13 +1953,13 @@ class _StepCreationState extends State<StepCreation>
     await _storage.ref().child(oldfilePath).delete();
   }
 
-  void resetState() {
+  void resetState(int indexEtape) {
     print("reset step state to beginning");
 
     setState(() {
       _imageFile = NO_PHOTO;
       _photoSize = NORMAL_SIZE;
-      sousEtape = PRENDRE_PHOTO;
+      sousEtape = indexEtape;
       _isRecording = NO_RECORD;
       _recording = NO_AUDIO_FILE;
       _playerState = STOPPED;
@@ -1960,8 +1999,12 @@ class _StepCreationState extends State<StepCreation>
   }
 
   Widget txtEmojiPanel(Report userReport) {
-    return prendrePhotoPanel(
-        userReport, "Appuie sur + pour ajouter du texte/émoji");
+    if (theresTextOrEmojis()) {
+      return prendrePhotoPanel(userReport, "");
+    } else {
+      return centeredMsg("assets/icon.png",
+          "Appuie sur + pour ajouter du texte/émoji", Colors.pink);
+    }
   }
 
   List<Widget> txtEmojiIcons(Report userReport) {
@@ -2128,7 +2171,7 @@ class _StepCreationState extends State<StepCreation>
   }
 
   void remetAZeroEtapeActions(Report userReport) {
-    resetState();
+    resetState(PRENDRE_PHOTO);
   }
 
   void deleteTxtActions() {
@@ -2151,11 +2194,11 @@ class _StepCreationState extends State<StepCreation>
 
     userReport.save();
 
-    resetState();
+    resetState(PRENDRE_PHOTO);
   }
 
   void finLeconChoice(Report userReport) {
-    incrementSubstep();
+    resetState(PREND_THUMBNAIL_PHOTO);
   }
 
   void incrementIfFirst3StepsCompleted() async {
@@ -2181,8 +2224,17 @@ class _StepCreationState extends State<StepCreation>
   }
 
   Widget prendThumbnailPanel(Report userReport) {
-    return prendrePhotoPanel(userReport,
-        "Appuie sur l'appareil photo pour prendre une photo du produit fini.");
+    return RepaintBoundary(
+      key: _canvasKey,
+      child: PhotoCanvas(
+        photoFile: _imageFile,
+        photoSize: _photoSize,
+        textsAndEmojis: _textsAndEmojis,
+        noPhotoText:
+            "Appuie sur l'appareil photo pour prendre une photo d'identité de ton projet.  😎",
+        photoUrl: NO_DATA,
+      ),
+    );
   }
 
   Widget completeInventoryPanel(Report userReport) {
@@ -2238,6 +2290,9 @@ class _StepCreationState extends State<StepCreation>
     /// the lesson is ready to be displayed in the Lecons panel
     makeLessonMature(babyLesson);
 
+    /// save the url of the user google icon
+    saveUserIconUrl(babyLesson);
+
     print(userReport.toString());
 
     /// save data
@@ -2252,5 +2307,42 @@ class _StepCreationState extends State<StepCreation>
       BabyLesson babyLesson, String newfilePath, String fileUrl) {
     babyLesson.thumbnailPath = newfilePath;
     babyLesson.thumbnailUrl = fileUrl;
+  }
+
+  void saveUserIconUrl(BabyLesson babyLesson) {
+    var user = Provider.of<FirebaseUser>(context);
+
+    babyLesson.userIconUrl = user.photoUrl;
+  }
+
+  incrementIfThumbPhotoTaken() {
+    if (_imageFile == NO_PHOTO) {
+      takeAThumbPlz();
+    } else {
+      incrementSubstep();
+    }
+  }
+
+  void takeAThumbPlz() {
+    displaySnackbar(
+        _scaffoldKey,
+        "Prend une photo représentant ta leçon, ou le produit final, stp...",
+        2500);
+  }
+
+  hideOrShowNextButton(Report userReport) {
+    if (_showNextButton == HIDE_NEXT_BUTTON) {
+      return NO_DATA;
+    } else if (_showNextButton == SHOW_NEXT_BUTTON) {
+      return nextButton(userReport);
+    } else {
+      throw Error();
+    }
+  }
+
+  void hideNextButton() {
+    setState(() {
+      _showNextButton = HIDE_NEXT_BUTTON;
+    });
   }
 }

@@ -305,7 +305,7 @@ class _UploaderState extends State<Uploader> {
   Widget goToNextStep() {
     return centeredMsg(
       "assets/icon.png", 
-      "Etape uploadée avec succès ! Passons à la prochaine étape",
+      "Etape uploadée avec succès ! Appuie sur ➜ pour continuer. 😍",
       Colors.indigoAccent,
     );
   }

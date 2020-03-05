@@ -1,6 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:quizapp/parts/consts.dart';
 import 'package:quizapp/parts/toolbox.dart';
 import 'package:quizapp/shared/bottom_nav.dart';
@@ -166,12 +164,12 @@ class _TopicsScreenState extends State<TopicsScreen> {
       // qu'on peut supprimer en swipant
       itemBuilder: (context, index) {
         var babyLesson = matureFilteredLessons[index];
-        var user = Provider.of<FirebaseUser>(context);
         var thumbnailUrl = babyLesson.thumbnailUrl;
+        var userIconUrl = babyLesson.userIconUrl;
 
         return LessonItem(
           thumbnailUrl: thumbnailUrl,
-          photoUrl: user.photoUrl,
+          photoUrl: userIconUrl,
           name: babyLesson.name,
           createdBy: babyLesson.createdBy,
           creationDate: babyLesson.creationDate,

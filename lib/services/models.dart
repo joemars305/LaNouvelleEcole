@@ -143,6 +143,8 @@ class BabyLesson {
   String thumbnailPath;
   String thumbnailUrl;
 
+  String userIconUrl;
+
   BabyLesson(
       {this.name,
       this.createdBy,
@@ -154,12 +156,14 @@ class BabyLesson {
       this.items,
       this.isMature,
       this.thumbnailPath,
-      this.thumbnailUrl});
+      this.thumbnailUrl,
+      this.userIconUrl});
 
   factory BabyLesson.fromMap(Map data) {
     return BabyLesson(
-      thumbnailPath: data['thumbnailFilePath'] ?? NO_DATA,
-      thumbnailUrl: data['thumbnailFileUrl'] ?? NO_DATA,
+      thumbnailPath: data['thumbnailPath'] ?? NO_DATA,
+      thumbnailUrl: data['thumbnailUrl'] ?? NO_DATA,
+      userIconUrl: data['userIconUrl'] ?? NO_DATA,
       isMature: data['isMature'] ?? NOT_MATURE,
       name: data['name'],
       createdBy: data['createdBy'],
@@ -179,7 +183,9 @@ class BabyLesson {
       storageBucket: storageBucketUri,
     );
 
-    await _storage.ref().child(thumbnailPath).delete();
+    if (thumbnailPath != NO_DATA) {
+      await _storage.ref().child(thumbnailPath).delete();
+    }
 
     for (var i = 0; i < steps.length; i++) {
       var step = steps[i];
@@ -204,8 +210,9 @@ class BabyLesson {
 
   Map toMap() {
     return {
-      'thumbnailFilePath': thumbnailPath ?? null,
-      'thumbnailFileUrl': thumbnailUrl ?? null,
+      'thumbnailPath': thumbnailPath ?? null,
+      'thumbnailUrl': thumbnailUrl ?? null,
+      'userIconUrl': userIconUrl ?? NO_DATA,
       'isMature': isMature ?? NOT_MATURE,
       'name': name ?? '',
       'createdBy': createdBy ?? '',
