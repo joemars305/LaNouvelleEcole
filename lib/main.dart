@@ -46,6 +46,7 @@ class MyApp extends StatelessWidget {
           '/favorites': (context) => FavoritesScreen(),
           '/create_fetus_lesson': (context) => CreateFetusPage(),
           '/step_creation': (context) => StepCreation(),
+          '/pick_video': (context) => PickPhotoVideo(),
         },
 
         // Les différents styles dispos

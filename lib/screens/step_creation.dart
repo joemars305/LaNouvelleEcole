@@ -139,7 +139,7 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /// PHOTO_FILE représente la
-  /// photo de l'étape en cours.
+  /// photo/video de l'étape en cours.
   ///
   /// null pour NO_PHOTO
   /// File pour PHOTO
@@ -174,13 +174,6 @@ class _StepCreationState extends State<StepCreation>
   }*/
 
   /// SOUS_ETAPES represente l'etape actuelle
-  ///
-  /// 0 pour PRENDRE_PHOTO
-  /// 1 pour TEXT_ET_EMOJI
-  /// 2 pour MSG_AUDIO
-  /// 3 pour INVENTAIRE
-  /// 4 pour UPLOAD_FILES
-  /// ...
   int sousEtape = PRENDRE_PHOTO;
 
   /// FONCTION
@@ -466,9 +459,7 @@ class _StepCreationState extends State<StepCreation>
           userReport, "Appuie sur l'appareil photo pour prendre une photo.");
     } else if (sousEtape == MSG_AUDIO) {
       return msgAudioPanel(userReport);
-    } else if (sousEtape == TEXT_EMOJI) {
-      return txtEmojiPanel(userReport);
-    } else if (sousEtape == UPLOAD_FILES) {
+    }  else if (sousEtape == UPLOAD_FILES) {
       return uploadFilesPanel(userReport);
     } else if (sousEtape == INVENTAIRE) {
       return inventairePanel(userReport);
@@ -478,9 +469,11 @@ class _StepCreationState extends State<StepCreation>
       return prendThumbnailPanel(userReport);
     } else if (sousEtape == COMPLETE_INVENTORY) {
       return completeInventoryPanel(userReport);
+    } else if (sousEtape == TEXT_EMOJI) {
+      return txtEmojiPanel(userReport);
     } else if (sousEtape == UPLOAD_THUMBNAIL) {
       return uploadThumbPanel(userReport);
-    } else {
+    }  else {
       throw Error();
     }
   }
@@ -858,42 +851,7 @@ class _StepCreationState extends State<StepCreation>
   /// les actions a effectuer pour passer
   /// d'une substep à un autre
   Future<void> nextButtonAction(Report userReport) async {
-    /// qd on est a l'étape d'upload de photo et audio
-    if (sousEtape == UPLOAD_FILES) {
-      nextStepOrLessonOver(userReport);
-    }
-
-    /// qd on va vers l'upload de thumbnail
-    else if (sousEtape == COMPLETE_INVENTORY) {
-      incrementIfThumbPhotoTaken();
-    }
-
-    /// qd on est a la dernière étape.
-    else if (sousEtape == lastStep) {
-      Navigator.of(context).pop();
-    }
-
-    /// qd on est à la sous étape 3,
-    /// et qu'on veut passer à la sous étape 4,
-    else if (sousEtape == TEXT_EMOJI) {
-      incrementIfFirst3StepsCompleted();
-    }
-
-    /// avant de uploader le thumbnail, on réduit sa taille
-    else if (sousEtape == PREND_THUMBNAIL_PHOTO) {
-      await savePhotoCanvas();
-      incrementSubstep();
-    }
-
-    /// on est a l'étape audio
-    else if (sousEtape == MSG_AUDIO) {
-      stopRecordActions();
-      hideNextButton();
-      incrementSubstep();
-    }
-
-    /// sinon on passe a l'étape suivante
-    else {
+    if (sousEtape < lastStep) {
       incrementSubstep();
     }
   }
@@ -986,23 +944,7 @@ class _StepCreationState extends State<StepCreation>
   /// les actions a effectuer pour passer
   /// a la sous étape précédente
   void backButtonAction() {
-    /// a la sous étape photo, qd
-    /// on veut retourner en arriere,
-    if (sousEtape == PRENDRE_PHOTO) {
-      return;
-    }
-
-    /// a la sous étape text et emoji
-    /// ou supérieur, qd
-    /// on veut retourner en arriere,
-    /// on reset le state,
-    /// on veut une page vierge
-    else if (sousEtape >= TEXT_EMOJI) {
-      resetState(PRENDRE_PHOTO);
-    } else if (sousEtape == MSG_AUDIO) {
-      stopRecordActions();
-      decrementSubstep();
-    } else {
+    if (sousEtape > PRENDRE_PHOTO) {
       decrementSubstep();
     }
   }
@@ -1035,14 +977,14 @@ class _StepCreationState extends State<StepCreation>
       return uploadFilesIcons();
     } else if (sousEtape == UPLOAD_THUMBNAIL) {
       return uploadThumbIcons(userReport);
-    } else if (sousEtape == TEXT_EMOJI) {
-      return txtEmojiIcons(userReport);
-    } else if (sousEtape == INVENTAIRE) {
+    }  else if (sousEtape == INVENTAIRE) {
       return inventaireIcons(userReport);
     } else if (sousEtape == PREND_THUMBNAIL_PHOTO) {
       return thumbnailIcons(userReport);
     } else if (sousEtape == COMPLETE_INVENTORY) {
       return completeInventaireIcons(userReport);
+    } else if (sousEtape == TEXT_EMOJI) {
+      return txtEmojiIcons(userReport);
     } else {
       throw Error();
     }
@@ -1407,7 +1349,9 @@ class _StepCreationState extends State<StepCreation>
       /// crée un objet portant ce nom
       else if (itemName.length > 0) {
         return createNewItem(itemName, userReport);
-      } else {
+      } 
+      
+      else {
         throw Error();
       }
     });
@@ -1966,6 +1910,7 @@ class _StepCreationState extends State<StepCreation>
       //_txtOuEmoji = DRAW_TEXT;
       _textsAndEmojis = [];
       _createUpload = DONT_CREATE_UP;
+      _showNextButton = SHOW_NEXT_BUTTON;
     });
   }
 
@@ -2332,7 +2277,7 @@ class _StepCreationState extends State<StepCreation>
 
   hideOrShowNextButton(Report userReport) {
     if (_showNextButton == HIDE_NEXT_BUTTON) {
-      return NO_DATA;
+      return Container();
     } else if (_showNextButton == SHOW_NEXT_BUTTON) {
       return nextButton(userReport);
     } else {

@@ -193,7 +193,7 @@ class BabyLessonsScreen extends StatelessWidget {
 
         Navigator.pushNamed(
           context,
-          '/step_creation',
+          '/pick_video',
           /*arguments: ScreenArguments(
             userReport,
             index,
