@@ -1,6 +1,3 @@
-/// - implémente le panel Leçons,
-/// pour que les bébé lecons matures
-/// soient visible
 ///
 /// - quand on clique une leçon, on va a la dernière
 /// étape visitée par l'user.
@@ -82,9 +79,12 @@ class _StepCreationState extends State<StepCreation>
         /// the appbar and the bottomappbar.
         Widget panel;
 
+        
+
         /// if we received the userReport
         if (snapshot.hasData) {
           userReport = snapshot.data;
+
 
           /// it's time to do steps
           panel = substepPanel(userReport);
@@ -138,22 +138,41 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  /// PHOTO_FILE représente la
+  /// _photoVideoFile représente la
   /// photo/video de l'étape en cours.
   ///
-  /// null pour NO_PHOTO
-  /// File pour PHOTO
-  File _imageFile = NO_PHOTO;
-
+  /// null pour NO_DATA
+  /// File pour un fichier photo/video
+  File _photoVideoFile = NO_DATA;
   /*
   handleImageFile() {
-    if (_imageFile == NO_PHOTO) {
+    if (_photoVideoFile == NO_DATA) {
       noPhoto();
     } else {
       photo();
     }
   }
   */
+
+  /// _fileType représente le type
+  /// de média pris par l'utilisateur
+  /// avec sa camera
+  ///
+  /// 0 pour VIDEO_FILE
+  /// 1 pour PHOTO_FILE
+
+  /*
+  fnForFileType() {
+    if (_fileType == VIDEO_FILE) {
+      return fnForVideoFile();
+    } else if (_fileType == PHOTO_FILE) {
+      return fnForPhotoFile();
+    } else {
+      throw Error();
+    }
+  }
+  */
+  int _fileType = NO_DATA;
 
   /// PHOTO_SIZE représente la taille
   /// de la photo de l'étape.
@@ -174,7 +193,7 @@ class _StepCreationState extends State<StepCreation>
   }*/
 
   /// SOUS_ETAPES represente l'etape actuelle
-  int sousEtape = PRENDRE_PHOTO;
+  int sousEtape = PRENDRE_PHOTO_VIDEO;
 
   /// FONCTION
   /*
@@ -454,12 +473,12 @@ class _StepCreationState extends State<StepCreation>
   /// quel contenu doit on afficher entre la top bar et
   /// la bottom bar
   Widget substepPanel(Report userReport) {
-    if (sousEtape == PRENDRE_PHOTO) {
-      return prendrePhotoPanel(
-          userReport, "Appuie sur l'appareil photo pour prendre une photo.");
+    if (sousEtape == PRENDRE_PHOTO_VIDEO) {
+      return prendrePhotoVideoPanel(userReport,
+          "Appuie sur l'appareil photo pour prendre une photo/vidéo.");
     } else if (sousEtape == MSG_AUDIO) {
       return msgAudioPanel(userReport);
-    }  else if (sousEtape == UPLOAD_FILES) {
+    } else if (sousEtape == UPLOAD_FILES) {
       return uploadFilesPanel(userReport);
     } else if (sousEtape == INVENTAIRE) {
       return inventairePanel(userReport);
@@ -469,26 +488,25 @@ class _StepCreationState extends State<StepCreation>
       return prendThumbnailPanel(userReport);
     } else if (sousEtape == COMPLETE_INVENTORY) {
       return completeInventoryPanel(userReport);
-    } else if (sousEtape == TEXT_EMOJI) {
-      return txtEmojiPanel(userReport);
     } else if (sousEtape == UPLOAD_THUMBNAIL) {
       return uploadThumbPanel(userReport);
-    }  else {
+    } else {
       throw Error();
     }
   }
 
   /// permet de voir la photo qu'on a prise
-  Widget prendrePhotoPanel(Report userReport, String msg) {
+  Widget prendrePhotoVideoPanel(Report userReport, String msg) {
+    var currentStep = userReport.getLatestBabyLessonSeen().getCurrentStep();
+
     return RepaintBoundary(
       key: _canvasKey,
-      child: PhotoCanvas(
-        photoFile: _imageFile,
+      child: PhotoVideoCanvas(
+        file: _photoVideoFile,
         photoSize: _photoSize,
-        textsAndEmojis: _textsAndEmojis,
-        noPhotoText: msg,
-        photoUrl:
-            userReport.getLatestBabyLessonSeen().getCurrentStep().photoFileUrl,
+        fileType: _fileType ?? currentStep.fileType,
+        noFileText: msg,
+        fileUrl: currentStep.photoVideoFileUrl,
       ),
     );
   }
@@ -627,7 +645,7 @@ class _StepCreationState extends State<StepCreation>
   ///
   Widget uploadFilesPanel(Report userReport) {
     return Uploader(
-      files: [_imageFile, File(_recording.path)],
+      files: [_photoVideoFile, File(_recording.path)],
       userReport: userReport,
       uploadMsgs: [
         "Upload de photo en cours...",
@@ -919,7 +937,7 @@ class _StepCreationState extends State<StepCreation>
     /// sauvegarde cette nouvelle photo
     /// et vide panier de texte et emoji
     setState(() {
-      _imageFile = imgFile;
+      _photoVideoFile = imgFile;
       _textsAndEmojis = NO_TEXTS_AND_EMOJIS;
     });
   }
@@ -944,7 +962,7 @@ class _StepCreationState extends State<StepCreation>
   /// les actions a effectuer pour passer
   /// a la sous étape précédente
   void backButtonAction() {
-    if (sousEtape > PRENDRE_PHOTO) {
+    if (sousEtape > PRENDRE_PHOTO_VIDEO) {
       decrementSubstep();
     }
   }
@@ -969,7 +987,7 @@ class _StepCreationState extends State<StepCreation>
 
   /// les icones de la sous étape en cours
   List<Widget> substepIcons(Report userReport) {
-    if (sousEtape == PRENDRE_PHOTO) {
+    if (sousEtape == PRENDRE_PHOTO_VIDEO) {
       return prendrePhotoIcons();
     } else if (sousEtape == MSG_AUDIO) {
       return msgAudioIcons(userReport);
@@ -977,14 +995,12 @@ class _StepCreationState extends State<StepCreation>
       return uploadFilesIcons();
     } else if (sousEtape == UPLOAD_THUMBNAIL) {
       return uploadThumbIcons(userReport);
-    }  else if (sousEtape == INVENTAIRE) {
+    } else if (sousEtape == INVENTAIRE) {
       return inventaireIcons(userReport);
     } else if (sousEtape == PREND_THUMBNAIL_PHOTO) {
       return thumbnailIcons(userReport);
     } else if (sousEtape == COMPLETE_INVENTORY) {
       return completeInventaireIcons(userReport);
-    } else if (sousEtape == TEXT_EMOJI) {
-      return txtEmojiIcons(userReport);
     } else {
       throw Error();
     }
@@ -1294,7 +1310,24 @@ class _StepCreationState extends State<StepCreation>
 
       if (selected != null) {
         setState(() {
-          _imageFile = selected;
+          _photoVideoFile = selected;
+          _fileType = PHOTO_FILE;
+        });
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  /// Select an vidéo via gallery or camera
+  Future<void> _pickVideo(ImageSource source) async {
+    try {
+      File selected = await ImagePicker.pickVideo(source: source);
+
+      if (selected != null) {
+        setState(() {
+          _photoVideoFile = selected;
+          _fileType = VIDEO_FILE;
         });
       }
     } catch (e) {
@@ -1349,9 +1382,7 @@ class _StepCreationState extends State<StepCreation>
       /// crée un objet portant ce nom
       else if (itemName.length > 0) {
         return createNewItem(itemName, userReport);
-      } 
-      
-      else {
+      } else {
         throw Error();
       }
     });
@@ -1365,9 +1396,34 @@ class _StepCreationState extends State<StepCreation>
         Icons.photo_camera,
         size: BOTTOM_ICON_SIZE,
       ),
-      onPressed: () => _pickImage(ImageSource.camera),
+      onPressed: recordPhoto,
       color: Colors.blue,
     );
+  }
+
+  recordPhotoVideo() {
+    Future<Choice> userChoice = getUserChoice(
+      context,
+      "Veux tu prendre une photo, ou une vidéo ?",
+      [
+        Choice("Une photo", PHOTO_FILE),
+        Choice("Une vidéo", VIDEO_FILE),
+      ],
+    );
+
+    fnForRecordChoice(userChoice);
+  }
+
+  void fnForRecordChoice(Future<Choice> futureChoice) {
+    futureChoice.then((choice) {
+      if (choice == NO_FUTURE_CHOICE) {
+        return noFileChoice();
+      } else if (choice.choiceValue == PHOTO_FILE) {
+        return recordPhoto();
+      } else if (choice.choiceValue == VIDEO_FILE) {
+        return recordVideo();
+      }
+    });
   }
 
   // l'icone nous permettant de prendre
@@ -1378,9 +1434,34 @@ class _StepCreationState extends State<StepCreation>
         Icons.photo_library,
         size: BOTTOM_ICON_SIZE,
       ),
-      onPressed: () => _pickImage(ImageSource.gallery),
+      onPressed: getLocalPhoto,
       color: Colors.pink,
     );
+  }
+
+  localPhotoVideo() {
+    Future<Choice> userChoice = getUserChoice(
+      context,
+      "Veux tu prendre une photo, ou une vidéo ?",
+      [
+        Choice("Une photo", PHOTO_FILE),
+        Choice("Une vidéo", VIDEO_FILE),
+      ],
+    );
+
+    fnForLocalFileChoice(userChoice);
+  }
+
+  void fnForLocalFileChoice(Future<Choice> futureChoice) {
+    futureChoice.then((choice) {
+      if (choice == NO_FUTURE_CHOICE) {
+        return noFileChoice();
+      } else if (choice.choiceValue == PHOTO_FILE) {
+        return getLocalPhoto();
+      } else if (choice.choiceValue == VIDEO_FILE) {
+        return getLocalVideo();
+      }
+    });
   }
 
   /// l'icone nous permettant de gérer
@@ -1824,8 +1905,8 @@ class _StepCreationState extends State<StepCreation>
     /// reset button so we
     /// can upload a new photo
     /*setState(() {
-                                                                                                                                                                                                                                                              _createUpload = DONT_CREATE_UP;
-                                                                                                                                                                                                                                                            });*/
+                                                                                                                                                                                                                                                                                                                                                                                              _createUpload = DONT_CREATE_UP;
+                                                                                                                                                                                                                                                                                                                                                                                            });*/
   }
 
   /// if there's an existing photo path,
@@ -1836,13 +1917,13 @@ class _StepCreationState extends State<StepCreation>
   Future<void> storeNewPhotoFilePath(
       String newfilePath, String fileUrl, Report userReport) async {
     var oldfilePath =
-        userReport.getLatestBabyLessonSeen().getCurrentStep().photoFilePath;
+        userReport.getLatestBabyLessonSeen().getCurrentStep().photoVideoFilePath;
 
     if (oldfilePath == NO_PHOTO_PATH) {
-      storePhotoPath(newfilePath, fileUrl, userReport);
+      storePhotoVideoPath(newfilePath, fileUrl, userReport);
     } else if (oldfilePath.length > 0) {
       await deleteFile(oldfilePath);
-      storePhotoPath(newfilePath, fileUrl, userReport);
+      storePhotoVideoPath(newfilePath, fileUrl, userReport);
     } else {
       throw Error();
     }
@@ -1868,13 +1949,15 @@ class _StepCreationState extends State<StepCreation>
     }
   }
 
-  void storePhotoPath(String newfilePath, String fileUrl, Report userReport) {
+  void storePhotoVideoPath(String newfilePath, String fileUrl, Report userReport) {
     /// get the current step data
     var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
 
     /// store new paths
-    step.photoFilePath = newfilePath;
-    step.photoFileUrl = fileUrl;
+    step.photoVideoFilePath = newfilePath;
+    step.photoVideoFileUrl = fileUrl;
+
+    step.fileType = _fileType;
 
     /// save data
     userReport.save();
@@ -1901,7 +1984,7 @@ class _StepCreationState extends State<StepCreation>
     print("reset step state to beginning");
 
     setState(() {
-      _imageFile = NO_PHOTO;
+      _photoVideoFile = NO_PHOTO;
       _photoSize = NORMAL_SIZE;
       sousEtape = indexEtape;
       _isRecording = NO_RECORD;
@@ -1945,7 +2028,7 @@ class _StepCreationState extends State<StepCreation>
 
   Widget txtEmojiPanel(Report userReport) {
     if (theresTextOrEmojis()) {
-      return prendrePhotoPanel(userReport, "");
+      return prendrePhotoVideoPanel(userReport, "");
     } else {
       return centeredMsg("assets/icon.png",
           "Appuie sur + pour ajouter du texte/émoji", Colors.pink);
@@ -2013,7 +2096,7 @@ class _StepCreationState extends State<StepCreation>
   }
 
   bool photoStepComplete() {
-    return _imageFile != NO_PHOTO;
+    return _photoVideoFile != NO_PHOTO;
   }
 
   bool msgAudioStepComplete() {
@@ -2116,7 +2199,7 @@ class _StepCreationState extends State<StepCreation>
   }
 
   void remetAZeroEtapeActions(Report userReport) {
-    resetState(PRENDRE_PHOTO);
+    resetState(PRENDRE_PHOTO_VIDEO);
   }
 
   void deleteTxtActions() {
@@ -2139,7 +2222,7 @@ class _StepCreationState extends State<StepCreation>
 
     userReport.save();
 
-    resetState(PRENDRE_PHOTO);
+    resetState(PRENDRE_PHOTO_VIDEO);
   }
 
   void finLeconChoice(Report userReport) {
@@ -2171,13 +2254,13 @@ class _StepCreationState extends State<StepCreation>
   Widget prendThumbnailPanel(Report userReport) {
     return RepaintBoundary(
       key: _canvasKey,
-      child: PhotoCanvas(
-        photoFile: _imageFile,
+      child: PhotoVideoCanvas(
+        file: _photoVideoFile,
+        fileType: _fileType,
         photoSize: _photoSize,
-        textsAndEmojis: _textsAndEmojis,
-        noPhotoText:
+        noFileText:
             "Appuie sur l'appareil photo pour prendre une photo d'identité de ton projet.  😎",
-        photoUrl: NO_DATA,
+        fileUrl: NO_DATA,
       ),
     );
   }
@@ -2196,7 +2279,7 @@ class _StepCreationState extends State<StepCreation>
 
   Widget uploadThumbPanel(Report userReport) {
     return Uploader(
-      files: [_imageFile],
+      files: [_photoVideoFile],
       userReport: userReport,
       uploadMsgs: [
         "Upload de photo thumbnail en cours...",
@@ -2261,7 +2344,7 @@ class _StepCreationState extends State<StepCreation>
   }
 
   incrementIfThumbPhotoTaken() {
-    if (_imageFile == NO_PHOTO) {
+    if (_photoVideoFile == NO_PHOTO) {
       takeAThumbPlz();
     } else {
       incrementSubstep();
@@ -2289,5 +2372,25 @@ class _StepCreationState extends State<StepCreation>
     setState(() {
       _showNextButton = HIDE_NEXT_BUTTON;
     });
+  }
+
+  void noFileChoice() {
+    displaySnackbar(_scaffoldKey, "On ne prend pas de photo/vidéo.", 2500);
+  }
+
+  void recordPhoto() {
+    _pickImage(ImageSource.camera);
+  }
+
+  void recordVideo() {
+    _pickVideo(ImageSource.camera);
+  }
+
+  void getLocalPhoto() {
+    _pickImage(ImageSource.gallery);
+  }
+
+  void getLocalVideo() {
+    _pickVideo(ImageSource.gallery);
   }
 }

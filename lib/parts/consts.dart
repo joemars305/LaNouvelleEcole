@@ -26,32 +26,31 @@ const NO_TEXT = null;
 
 /// howManySubsteps est la quantité
 /// de sous étapes à effectuer
-const howManySubsteps = 8;
-
+const howManySubsteps = 7;
 const lastStep = howManySubsteps - 1;
 
 /// represente l'etape prendre une photo
-const PRENDRE_PHOTO = 0;
+const PRENDRE_PHOTO_VIDEO = 0;
 
 /// représente l'étape text et emoji
-const TEXT_EMOJI = 2;
+//const TEXT_EMOJI = 2;
  
 /// represente l'etape MESSAGE AUDIO
 const MSG_AUDIO = 1;
 
 
 /// représente l'étape INVENTAIRE
-const INVENTAIRE = 3;
+const INVENTAIRE = 2;
 
 /// represente l'etape UPLOAD_PHOTO
-const UPLOAD_FILES = 4;
+const UPLOAD_FILES = 3;
 
 /// represente les deux étapes finales,
 /// ou nous prenons une photo du produit fini, 
 /// puis on ajoute des infos approvisionnement
-const PREND_THUMBNAIL_PHOTO = 5;
-const COMPLETE_INVENTORY = 6;
-const UPLOAD_THUMBNAIL = 7;
+const PREND_THUMBNAIL_PHOTO = 4;
+const COMPLETE_INVENTORY = 5;
+const UPLOAD_THUMBNAIL = 6;
 
 /// IS_RECORDING représente si on est en train, ou pas,
 /// d'enregistrer un message audio
@@ -267,4 +266,5 @@ const LOGEMENT = 'Logement';
 const ENERGIE = 'Energie';
 const List<String> categories = [NOURRITURE, LOGEMENT, ENERGIE];
 
-
+const PHOTO_FILE = 1;
+const VIDEO_FILE = 0;

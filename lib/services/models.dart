@@ -189,7 +189,7 @@ class BabyLesson {
 
     for (var i = 0; i < steps.length; i++) {
       var step = steps[i];
-      var photopath = step.photoFilePath;
+      var photopath = step.photoVideoFilePath;
       var audiopath = step.audioFilePath;
 
       print('photo path during deletion');
@@ -229,40 +229,44 @@ class BabyLesson {
 class LessonStep {
   String audioFilePath;
   String audioFileUrl;
-  String photoFilePath;
-  String photoFileUrl;
+  String photoVideoFilePath;
+  String photoVideoFileUrl;
   int currentSubstep;
+
+  int fileType;
 
   LessonStep({
     this.audioFilePath,
     this.audioFileUrl,
-    this.photoFilePath,
-    this.photoFileUrl,
+    this.photoVideoFilePath,
+    this.photoVideoFileUrl,
     this.currentSubstep,
+    this.fileType,
   });
 
   factory LessonStep.fromMap(Map data) {
     return LessonStep(
       audioFilePath: data['audioFilePath'] ?? null,
-      photoFilePath: data['photoFilePath'] ?? null,
+      photoVideoFilePath: data['photoFilePath'] ?? null,
       audioFileUrl: data['audioFileUrl'] ?? null,
-      photoFileUrl: data['photoFileUrl'] ?? null,
+      photoVideoFileUrl: data['photoFileUrl'] ?? null,
       currentSubstep: data['currentSubstep'] ?? 0,
+      fileType: data['fileType'] ?? PHOTO_FILE,
     );
   }
 
   Map toMap() {
     return {
       'audioFilePath': audioFilePath ?? null,
-      'photoFilePath': photoFilePath ?? null,
+      'photoFilePath': photoVideoFilePath ?? null,
       'audioFileUrl': audioFileUrl ?? null,
-      'photoFileUrl': photoFileUrl ?? null,
+      'photoFileUrl': photoVideoFileUrl ?? null,
       'currentSubstep': currentSubstep ?? 0,
     };
   }
 
   bool photoTaken() {
-    return photoFilePath != null;
+    return photoVideoFilePath != null;
   }
 }
 
