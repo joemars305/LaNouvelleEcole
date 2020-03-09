@@ -92,6 +92,13 @@ class _UploaderState extends State<Uploader> {
     onUploadsDone = widget.onUploadsDone;
   }
 
+  @override
+  void dispose() {
+    _uploadTask.cancel();
+    print("upload annulé !!");
+    super.dispose();
+  }
+
   /// demarre l'upload,
   /// et run la fonction de fin d'upload quand
   /// l'upload est terminé

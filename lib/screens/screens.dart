@@ -8,3 +8,4 @@ export 'create_fetus_lesson.dart';
 export 'step_creation.dart';
 export 'step_creation.dart';
 export 'pick_video.dart';
+export 'lesson_viewer.dart';

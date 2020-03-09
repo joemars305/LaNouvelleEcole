@@ -54,7 +54,7 @@ class _TopicsScreenState extends State<TopicsScreen> {
         /// to get userReports
         else if (snapshot.hasError) {
           print(snapshot.error);
-          
+
           /// inform the user about it
           panel = errorMsg();
         }
@@ -174,7 +174,13 @@ class _TopicsScreenState extends State<TopicsScreen> {
           createdBy: babyLesson.createdBy,
           creationDate: babyLesson.creationDate,
           onTap: () {
-            print("coké");
+            Navigator.pushNamed(
+              context,
+              '/lesson_viewer',
+              arguments: {
+                "babyLesson": babyLesson,
+              },
+            );
           },
         );
       },

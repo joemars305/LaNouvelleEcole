@@ -73,6 +73,7 @@ class _PhotoVideoCanvasState extends State<PhotoVideoCanvas> {
     /// crée le
     initVideoPlayer();
 
+
     super.initState();
   }
 

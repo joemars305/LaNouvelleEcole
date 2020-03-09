@@ -47,6 +47,7 @@ class MyApp extends StatelessWidget {
           '/create_fetus_lesson': (context) => CreateFetusPage(),
           '/step_creation': (context) => StepCreation(),
           '/pick_video': (context) => PickPhotoVideo(),
+          '/lesson_viewer': (context) => LessonViewer(),
         },
 
         // Les différents styles dispos

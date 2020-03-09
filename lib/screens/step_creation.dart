@@ -1,36 +1,38 @@
+/// - ajoute choix entre photo/vidéo, ou photo, ou vidéo,
+/// avec un parameter dans PhotoVideoCanvas
+/// 
+/// - implémente un upload de photo video via cloudfare, ou autre CDN
+/// 
+/// - Ajoute une icone Boussole, a coté de Favoris.
+/// ce panneau est constitué de 2 panneau swipable left right:
+/// 
+/// - un panneau Agenda, affichant une liste des 'choses a faire',
+/// pour chaque jour, nous permettant de créer/modifier/annuler
+/// des 'choses a faire' a un moment donné, a un jour donné.
+/// 
+/// - un panneau Carte, qui affiche une carte Google Maps 
+/// centrée sur la position actuelle, et possibilité de rajouter des
+/// des marqueurs avec un nom et un type.
+/// 
+/// - dans lesson_viewer, crée une icone topbar shopping,
+/// qui affiche un panel similaire a l'inventaire,
+/// mais read only (pas de + ou -), et qui propose on tap,
+/// un choix d'etre redirigé vers:
+/// * un site web (si url fournie), 
+/// * un lieu d'approv. google maps (si lieu approv. fourni).
 ///
-/// - quand on clique une leçon, on va a la dernière
-/// étape visitée par l'user.
-///
-/// - chaque étape est une photo accompagnée, d'un message audio
-/// qui joue une fois automatiquement.
-///
-/// - implémente un bouton restart audio et play/pause
-///
-///
-/// - (plus tard) implémente si possible une barre audio
-///
-/// - (plus tard) si possible, implemente la possibilité
-/// de pouvoir prendre une video pour une étape,
-/// et de le stocker en gifhy.
-///
-/// - (plus tard) lorsque on accède a une lecon:
-/// * si l'user a déja acheté les fournitures,
-///   dirige le directement
-///   vers la derniere étape visitée
-/// * sinon dirige le vers l'étape
-///   d'approvisionnement de
-///   ressources.
-///
-///  - (plus tard) une fois la leçon terminée,
-/// on veut pouvoir ajouter plus d'infos dans
-/// l'inventaire, comme:
+/// - on veut pouvoir ajouter plus d'infos dans
+/// l'inventaire, on tap, comme:
 /// * les prix unitaire des objets,
 /// * une url liant vers un site d'achat
 /// * une position google maps représentant
 ///   un lieu d'approvisionnement de ressource,
 ///   payant ou naturel.
-
+/// * le prix total de tous les objets topbar
+/// 
+/// 
+/// 
+/// 
 import 'dart:io';
 import 'dart:ui';
 import 'package:audio_recorder/audio_recorder.dart';
@@ -79,12 +81,9 @@ class _StepCreationState extends State<StepCreation>
         /// the appbar and the bottomappbar.
         Widget panel;
 
-        
-
         /// if we received the userReport
         if (snapshot.hasData) {
           userReport = snapshot.data;
-
 
           /// it's time to do steps
           panel = substepPanel(userReport);
@@ -136,6 +135,15 @@ class _StepCreationState extends State<StepCreation>
       vsync: this,
       duration: Duration(seconds: DUREE_MSG_AUDIO),
     );
+  }
+
+  @override
+  void dispose() {
+
+    controller.dispose();
+    audioPlayer.stop();
+    audioPlayer.dispose();
+    super.dispose();
   }
 
   /// _photoVideoFile représente la
@@ -499,12 +507,15 @@ class _StepCreationState extends State<StepCreation>
   Widget prendrePhotoVideoPanel(Report userReport, String msg) {
     var currentStep = userReport.getLatestBabyLessonSeen().getCurrentStep();
 
+    print("ft: " + _fileType.toString());
+    print("csft: " + currentStep.fileType.toString());
+
     return RepaintBoundary(
       key: _canvasKey,
       child: PhotoVideoCanvas(
         file: _photoVideoFile,
         photoSize: _photoSize,
-        fileType: _fileType ?? currentStep.fileType,
+        fileType: _fileType != NO_DATA ? _fileType : currentStep.fileType,
         noFileText: msg,
         fileUrl: currentStep.photoVideoFileUrl,
       ),
@@ -870,7 +881,14 @@ class _StepCreationState extends State<StepCreation>
   /// d'une substep à un autre
   Future<void> nextButtonAction(Report userReport) async {
     if (sousEtape < lastStep) {
-      incrementSubstep();
+      if (sousEtape == UPLOAD_FILES) {
+        nextStepOrLessonOver(userReport);
+      } else if (sousEtape == PREND_THUMBNAIL_PHOTO) {
+        await uglifyPhotoFile();
+        incrementSubstep();
+      } else {
+        incrementSubstep();
+      }
     }
   }
 
@@ -909,7 +927,7 @@ class _StepCreationState extends State<StepCreation>
     displaySnackbar(_scaffoldKey, msg, durationMsec);
   }
 
-  savePhotoCanvas() async {
+  uglifyPhotoFile() async {
     RenderRepaintBoundary boundary =
         _canvasKey.currentContext.findRenderObject();
 
@@ -1038,7 +1056,28 @@ class _StepCreationState extends State<StepCreation>
     return [
       recordIcon(),
       playPauseIcon(userReport),
+      restartAudioIcon(userReport),
     ];
+  }
+
+  /// l'icone qui joue un enregistrement audio
+  Widget restartAudioIcon(Report userReport) {
+    return IconButton(
+      icon: Icon(
+        Icons.skip_previous,
+        size: BOTTOM_ICON_SIZE,
+      ),
+      onPressed: () async {
+        await restartAudioActions(userReport);
+      },
+      color: Colors.blue,
+    );
+  }
+
+  Future<void> restartAudioActions(Report userReport) async {
+    await audioPlayer.stop();
+
+    playIconActions(userReport);
   }
 
   /// l'icone qui joue/pause un enregistrement audio
@@ -1534,11 +1573,7 @@ class _StepCreationState extends State<StepCreation>
   Widget wholeScreen(BuildContext context, Report userReport, Widget panel) {
     return WillPopScope(
       onWillPop: () async {
-        // You can do some work here.
-        // Returning true allows the pop to happen, returning false prevents it.
         await stopRecordActions();
-
-        controller.dispose();
 
         return true;
       },
@@ -1916,8 +1951,10 @@ class _StepCreationState extends State<StepCreation>
   /// otherwise just store the new path
   Future<void> storeNewPhotoFilePath(
       String newfilePath, String fileUrl, Report userReport) async {
-    var oldfilePath =
-        userReport.getLatestBabyLessonSeen().getCurrentStep().photoVideoFilePath;
+    var oldfilePath = userReport
+        .getLatestBabyLessonSeen()
+        .getCurrentStep()
+        .photoVideoFilePath;
 
     if (oldfilePath == NO_PHOTO_PATH) {
       storePhotoVideoPath(newfilePath, fileUrl, userReport);
@@ -1949,7 +1986,8 @@ class _StepCreationState extends State<StepCreation>
     }
   }
 
-  void storePhotoVideoPath(String newfilePath, String fileUrl, Report userReport) {
+  void storePhotoVideoPath(
+      String newfilePath, String fileUrl, Report userReport) {
     /// get the current step data
     var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
 
@@ -1958,6 +1996,8 @@ class _StepCreationState extends State<StepCreation>
     step.photoVideoFileUrl = fileUrl;
 
     step.fileType = _fileType;
+
+    print("file type during save: " + _fileType.toString());
 
     /// save data
     userReport.save();
@@ -2235,7 +2275,7 @@ class _StepCreationState extends State<StepCreation>
     ///   on sauvegarde le contenu
     ///   d u canvas photo
     if (photoStepComplete() && msgAudioStepComplete() && theresTextOrEmojis()) {
-      await savePhotoCanvas();
+      await uglifyPhotoFile();
 
       incrementSubstep();
     }
