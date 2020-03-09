@@ -1,7 +1,13 @@
+
+
 /// - ajoute choix entre photo/vidéo, ou photo, ou vidéo,
 /// avec un parameter dans PhotoVideoCanvas
 /// 
 /// - implémente un upload de photo video via cloudfare, ou autre CDN
+/// 
+/// - Dans la liste de choix de Etape .. (../..),
+/// ajoute un choix permettant de passer au meme écran que lesson_viewer,
+/// et back and forth
 /// 
 /// - Ajoute une icone Boussole, a coté de Favoris.
 /// ce panneau est constitué de 2 panneau swipable left right:
@@ -29,10 +35,6 @@
 ///   un lieu d'approvisionnement de ressource,
 ///   payant ou naturel.
 /// * le prix total de tous les objets topbar
-/// 
-/// 
-/// 
-/// 
 import 'dart:io';
 import 'dart:ui';
 import 'package:audio_recorder/audio_recorder.dart';
