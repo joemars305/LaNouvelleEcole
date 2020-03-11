@@ -47,6 +47,7 @@ class PhotoVideoCanvas extends StatefulWidget {
   /// si photo uploadée, l'url
   final String fileUrl;
 
+ 
   PhotoVideoCanvas({
     Key key,
     this.file,

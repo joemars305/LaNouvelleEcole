@@ -1,8 +1,5 @@
 
 
-/// - ajoute choix entre photo/vidéo, ou photo, ou vidéo,
-/// avec un parameter dans PhotoVideoCanvas
-/// 
 /// - implémente un upload de photo video via cloudfare, ou autre CDN
 /// 
 /// - Dans la liste de choix de Etape .. (../..),
@@ -1029,8 +1026,8 @@ class _StepCreationState extends State<StepCreation>
   /// les icones de l'étape photo
   List<Widget> prendrePhotoIcons() {
     return [
-      photoCameraIcon(),
-      photoLibraryIcon(),
+      photoCameraIcon(PHOTO_AND_VIDEO),
+      photoLibraryIcon(PHOTO_AND_VIDEO),
       photoSizeIcon(),
     ];
   }
@@ -1431,13 +1428,23 @@ class _StepCreationState extends State<StepCreation>
 
   // l'icone nous permettant de prendre
   // une photo avec l'appareil photo
-  Widget photoCameraIcon() {
+  Widget photoCameraIcon(int whatCapture) {
+    Function actions;
+
+    if (whatCapture == PHOTO_AND_VIDEO) {
+      actions = recordPhotoVideo;
+    } else if (whatCapture == PHOTO_ONLY) {
+      actions = recordPhoto;
+    } else if (whatCapture == VIDEO_ONLY) {
+      actions = recordVideo;
+    }
+
     return IconButton(
       icon: Icon(
         Icons.photo_camera,
         size: BOTTOM_ICON_SIZE,
       ),
-      onPressed: recordPhoto,
+      onPressed: actions,
       color: Colors.blue,
     );
   }
@@ -1469,13 +1476,23 @@ class _StepCreationState extends State<StepCreation>
 
   // l'icone nous permettant de prendre
   // une photo dans la mémoire du téléphone
-  Widget photoLibraryIcon() {
+  Widget photoLibraryIcon(int whatCapture) {
+    Function actions;
+
+    if (whatCapture == PHOTO_AND_VIDEO) {
+      actions = localPhotoVideo;
+    } else if (whatCapture == PHOTO_ONLY) {
+      actions = getLocalPhoto;
+    } else if (whatCapture == VIDEO_ONLY) {
+      actions = getLocalVideo;
+    }
+
     return IconButton(
       icon: Icon(
         Icons.photo_library,
         size: BOTTOM_ICON_SIZE,
       ),
-      onPressed: getLocalPhoto,
+      onPressed: actions,
       color: Colors.pink,
     );
   }
@@ -2312,7 +2329,11 @@ class _StepCreationState extends State<StepCreation>
   }
 
   List<Widget> thumbnailIcons(Report userReport) {
-    return prendrePhotoIcons();
+    return [
+      photoCameraIcon(PHOTO_ONLY),
+      photoLibraryIcon(PHOTO_ONLY),
+      photoSizeIcon(),
+    ];
   }
 
   List<Widget> completeInventaireIcons(Report userReport) {

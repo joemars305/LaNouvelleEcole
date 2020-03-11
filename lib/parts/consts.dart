@@ -268,3 +268,7 @@ const List<String> categories = [NOURRITURE, LOGEMENT, ENERGIE];
 
 const PHOTO_FILE = 1;
 const VIDEO_FILE = 0;
+
+const PHOTO_AND_VIDEO = 0;
+const PHOTO_ONLY = 1;
+const VIDEO_ONLY = 2;
