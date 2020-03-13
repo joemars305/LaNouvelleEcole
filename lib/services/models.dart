@@ -210,8 +210,8 @@ class BabyLesson {
 
   Map toMap() {
     return {
-      'thumbnailPath': thumbnailPath ?? null,
-      'thumbnailUrl': thumbnailUrl ?? null,
+      'thumbnailPath': thumbnailPath ?? NO_DATA,
+      'thumbnailUrl': thumbnailUrl ?? NO_DATA,
       'userIconUrl': userIconUrl ?? NO_DATA,
       'isMature': isMature ?? NOT_MATURE,
       'name': name ?? '',
@@ -232,9 +232,8 @@ class LessonStep {
   String photoVideoFilePath;
   String photoVideoFileUrl;
   int currentSubstep;
-
-
   int fileType;
+  String publicId;
 
   LessonStep({
     this.audioFilePath,
@@ -243,6 +242,7 @@ class LessonStep {
     this.photoVideoFileUrl,
     this.currentSubstep,
     this.fileType,
+    this.publicId,
   });
 
 
@@ -255,6 +255,7 @@ class LessonStep {
       photoVideoFileUrl: data['photoFileUrl'] ?? null,
       currentSubstep: data['currentSubstep'] ?? 0,
       fileType: data['fileType'] ?? PHOTO_FILE,
+      publicId: data['publicId'] ?? NO_DATA,
     );
   }
 
@@ -265,6 +266,9 @@ class LessonStep {
       'audioFileUrl': audioFileUrl ?? null,
       'photoFileUrl': photoVideoFileUrl ?? null,
       'currentSubstep': currentSubstep ?? 0,
+      'publicId': publicId ?? NO_DATA,
+      'fileType': fileType ?? PHOTO_FILE,
+
     };
   }
 

@@ -12,8 +12,7 @@ class FileUploader {
   static const _uploadPreset = "rvx2lyep";
   static const _cloudName = "dn1vcwy8m";
   static const _ressourceType = "auto";
-  static const REQUEST_SUCCESSFUL = 200;
-  static const REQUEST_FAILED = 404;
+  
   
   Dio _dio = new Dio();
 
@@ -33,20 +32,31 @@ class FileUploader {
   /// 
   /// - 
   /// 
-  Future uploadFile(
-      File file, Function onUploadProgress) async {
+  uploadFile(
+      File file, Function onUploadProgress, onUploadDone) async {
     try {
+      ///l'url et le form data de la request d'upload POST
       var uploadUrl = _getRequestUploadUrl();
       var uploadData = await _getUploadData(file);
 
+      /// on lance une requete d'upload 
+      /// et on attend le résultat
       Response _response = await _dio.post(
         uploadUrl,
         data: uploadData,
         onSendProgress: onUploadProgress,
       );
 
-      return _response;
+      /// l'objet recu en réponse
+      var responseData = _response.data;
 
+      /// le code de la réponse
+      var responseCode = _response.statusCode;
+
+      /// après avoir reçu la réponse de
+      /// la requete,
+      /// on run la fonction onUploadDone
+      onUploadDone(responseData, responseCode);
       
     } catch (e) {
       print("Oups.. pepin...");
@@ -54,6 +64,10 @@ class FileUploader {
 
       return NO_DATA;
     }
+  }
+
+  close() {
+    _dio.close();
   }
 
   /// nous fournit l'url permettant

@@ -1,3 +1,4 @@
+
 /// - implémente un upload de photo video via cloudfare, ou autre CDN
 ///
 /// - Dans la liste de choix de Etape .. (../..),
@@ -33,6 +34,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:audio_recorder/audio_recorder.dart';
+import 'package:filesize/filesize.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -140,9 +142,12 @@ class _StepCreationState extends State<StepCreation>
 
   @override
   void dispose() {
+    print('allez hop on ferme boutique.');
+
     controller.dispose();
     audioPlayer.stop();
-    audioPlayer.dispose();
+    fileUploader.close();
+
     super.dispose();
   }
 
@@ -203,7 +208,6 @@ class _StepCreationState extends State<StepCreation>
   /// SOUS_ETAPES represente l'etape actuelle
   int sousEtape = PRENDRE_PHOTO_VIDEO;
 
-  
   /// IS_RECORDING représente si on est en train, ou pas,
   /// d'enregistrer un message audio
   ///
@@ -280,7 +284,7 @@ class _StepCreationState extends State<StepCreation>
 
   */
 
-  /// PHOTO_VIDEO_UPLOAD_STATUS représente 
+  /// PHOTO_VIDEO_UPLOAD_STATUS représente
   /// l'état d'avancement de l'upload de photo/vidéo
   int photoVideoUploadStatus = NOT_UPLOADED;
 
@@ -297,7 +301,12 @@ class _StepCreationState extends State<StepCreation>
     }
   }
   */
-  
+
+  /// combien de bytes envoyés dans le cloud ?
+  int _sent = 0;
+
+  /// taille en bytes du fichier en cours d'envoi
+  int _total = 0;
 
   /// nous permet de supprimer une photo
   /// stockée dans firebase storage
@@ -712,7 +721,7 @@ class _StepCreationState extends State<StepCreation>
       if (sousEtape == UPLOAD_FILES) {
         nextStepOrLessonOver(userReport);
       } else if (sousEtape == PREND_THUMBNAIL_PHOTO) {
-        await uglifyPhotoFile();
+        //await uglifyPhotoFile();
         incrementSubstep();
       } else {
         incrementSubstep();
@@ -837,7 +846,7 @@ class _StepCreationState extends State<StepCreation>
     } else if (sousEtape == MSG_AUDIO) {
       return msgAudioIcons(userReport);
     } else if (sousEtape == UPLOAD_FILES) {
-      return uploadFilesIcons();
+      return uploadFilesIcons(userReport);
     } else if (sousEtape == UPLOAD_THUMBNAIL) {
       return uploadThumbIcons(userReport);
     } else if (sousEtape == INVENTAIRE) {
@@ -1116,15 +1125,13 @@ class _StepCreationState extends State<StepCreation>
     }
   }
 
-  List<Widget> uploadFilesIcons() {
+  List<Widget> uploadFilesIcons(Report userReport) {
     return [
-      uploadFilesIcon(),
+      uploadFilesIcon(userReport),
     ];
   }
 
-  
-
-  Widget uploadFilesIcon() {
+  Widget uploadFilesIcon(Report userReport) {
     return IconButton(
       iconSize: ITEM_ICON_SIZE,
       icon: Icon(
@@ -1132,12 +1139,50 @@ class _StepCreationState extends State<StepCreation>
         size: BOTTOM_ICON_SIZE,
         color: Colors.pink,
       ),
-      onPressed: uploadFilesActions,
+      onPressed: () {
+        uploadFilesActions(userReport);
+      },
     );
   }
 
-  uploadFilesActions() {
-    
+  uploadFilesActions(Report userReport) {
+    /// si y'a pas d'up en cours,
+    /// demarre l'up de photo/vidéo
+    if (photoVideoUploadStatus == NOT_UPLOADED) {
+      startFileUpload(userReport);
+    }
+
+    /// si y'a déja un up en cours,
+    /// informe user
+    else if (photoVideoUploadStatus == UPLOAD_IN_PROGRESS) {
+      uploadAlreadyGoingOn();
+    }
+
+    /// si un up successful à eu lieu,
+    /// on  reupload
+    else if (photoVideoUploadStatus == UPLOAD_SUCCESS) {
+      startFileUpload(userReport);
+    }
+
+    /// si un up à échoué, on réessaie
+    else if (photoVideoUploadStatus == UPLOAD_FAIL) {
+      startFileUpload(userReport);
+    }
+  }
+
+  startFileUpload(Report userReport) async {
+    setState(() {
+      photoVideoUploadStatus = UPLOAD_IN_PROGRESS;
+
+      /// on lance un upload de fichier
+      fileUploader.uploadFile(
+        _photoVideoFile,
+        onUploadProgress,
+        (reqData, reqCode) {
+          onFileUploadDone(reqData, reqCode, userReport);
+        },
+      );
+    });
   }
 
   /// les icones de l'inventaire
@@ -1645,8 +1690,6 @@ class _StepCreationState extends State<StepCreation>
     userReport.save();
   }
 
-  
-
   afterPhotoUploaded(String newFilePath, String fileUrl, Report userReport) {
     /// if there's an existing photo path,
     /// delete the photo at that path in firebase,
@@ -1661,8 +1704,8 @@ class _StepCreationState extends State<StepCreation>
     /// reset button so we
     /// can upload a new photo
     /*setState(() {
-                                                                                                                                                                                                                                                                                                                                                                                              _createUpload = DONT_CREATE_UP;
-                                                                                                                                                                                                                                                                                                                                                                                            });*/
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  _createUpload = DONT_CREATE_UP;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                });*/
   }
 
   /// if there's an existing photo path,
@@ -1955,7 +1998,6 @@ class _StepCreationState extends State<StepCreation>
         2500);
   }
 
-  
   void noFileChoice() {
     displaySnackbar(_scaffoldKey, "On ne prend pas de photo/vidéo.", 2500);
   }
@@ -1974,5 +2016,84 @@ class _StepCreationState extends State<StepCreation>
 
   void getLocalVideo() {
     _pickVideo(ImageSource.gallery);
+  }
+
+  Widget noFilesUploaded() {
+    return centeredMsg(
+      "assets/icon.png",
+      "Appuie sur le nuage pour lancer l'upload.",
+      Colors.purpleAccent,
+    );
+  }
+
+  Widget upInProgress() {
+    var mbSent = filesize(_sent); 
+    var mbTotal = filesize(_total);
+
+    return centeredMsg(
+      "assets/icon.png",
+      "Upload en cours...\n" + "$mbSent / $mbTotal",
+      Colors.purpleAccent,
+    );
+  }
+
+  Widget upSuccess() {
+    return centeredMsg(
+      "assets/icon.png",
+      "Upload réussi !",
+      Colors.purpleAccent,
+    );
+  }
+
+  Widget upFail() {
+    return centeredMsg(
+      "assets/icon.png",
+      "Echec de l'upload. Appuie sur le nuage pour réessayer.",
+      Colors.purpleAccent,
+    );
+  }
+
+  void uploadAlreadyGoingOn() {
+    displaySnackbar(
+        _scaffoldKey, "Un upload de fichier est déja en cours.", 2500);
+  }
+
+  onUploadProgress(int sent, int total) {
+    setState(() {
+      _sent = sent;
+      _total = total;
+
+      print("bytes envoyé: $sent");
+      print("total bytes: $total");
+    });
+  }
+
+  /// que faire quand la requete d'upload renvoie une réponse ?
+  void onFileUploadDone(Map reqData, int reqCode, Report userReport) {
+    /// si le fichier à été uploadé avec succès
+    /// on veut sauvegarder l'url du fichier
+    /// photo/video de l'étape en cours
+    if (reqCode == REQUEST_SUCCESSFUL) {
+      var etapeEnCours = userReport.getLatestBabyLessonSeen().getCurrentStep();
+      var urlPhotoVideo = reqData['url'];
+      var publicId = reqData['public_id'];
+
+      etapeEnCours.fileType = _fileType;
+      etapeEnCours.photoVideoFileUrl = urlPhotoVideo;
+      etapeEnCours.publicId = publicId;
+
+      userReport.save();
+
+      /// indique succès
+      setState(() {
+        photoVideoUploadStatus = UPLOAD_SUCCESS;
+      });
+    }
+    /// sinon indique echec
+    else {
+      setState(() {
+        photoVideoUploadStatus = UPLOAD_FAIL;
+      });
+    }
   }
 }

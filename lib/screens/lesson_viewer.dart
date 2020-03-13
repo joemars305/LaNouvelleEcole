@@ -1,4 +1,3 @@
-import 'package:audio_recorder/audio_recorder.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:quizapp/parts/consts.dart';
@@ -27,11 +26,7 @@ class _LessonViewerState extends State<LessonViewer> {
   /// 2 pour PAUSED
   int _playerState = STOPPED;
 
-  /// RECORDING représente le message audio
-  ///
-  /// null pour NO_AUDIO_FILE
-  /// new Recording(...) pour AUDIO_FILE
-  Recording _recording = NO_AUDIO_FILE;
+ 
 
   /// le lecteur audio
   AudioPlayer audioPlayer = AudioPlayer();
