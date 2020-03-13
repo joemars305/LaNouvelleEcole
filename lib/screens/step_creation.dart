@@ -1,27 +1,25 @@
-
-
 /// - implémente un upload de photo video via cloudfare, ou autre CDN
-/// 
+///
 /// - Dans la liste de choix de Etape .. (../..),
 /// ajoute un choix permettant de passer au meme écran que lesson_viewer,
 /// et back and forth
-/// 
+///
 /// - Ajoute une icone Boussole, a coté de Favoris.
 /// ce panneau est constitué de 2 panneau swipable left right:
-/// 
+///
 /// - un panneau Agenda, affichant une liste des 'choses a faire',
 /// pour chaque jour, nous permettant de créer/modifier/annuler
 /// des 'choses a faire' a un moment donné, a un jour donné.
-/// 
-/// - un panneau Carte, qui affiche une carte Google Maps 
+///
+/// - un panneau Carte, qui affiche une carte Google Maps
 /// centrée sur la position actuelle, et possibilité de rajouter des
 /// des marqueurs avec un nom et un type.
-/// 
+///
 /// - dans lesson_viewer, crée une icone topbar shopping,
 /// qui affiche un panel similaire a l'inventaire,
 /// mais read only (pas de + ou -), et qui propose on tap,
 /// un choix d'etre redirigé vers:
-/// * un site web (si url fournie), 
+/// * un site web (si url fournie),
 /// * un lieu d'approv. google maps (si lieu approv. fourni).
 ///
 /// - on veut pouvoir ajouter plus d'infos dans
@@ -42,6 +40,7 @@ import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:quizapp/parts/cloudinary_api.dart';
 import 'package:quizapp/parts/parts.dart';
 import 'package:quizapp/services/services.dart';
 import 'package:quizapp/shared/photo_canvas.dart';
@@ -117,6 +116,9 @@ class _StepCreationState extends State<StepCreation>
   /// nous permet de sauvegarder la zone photo
   final _canvasKey = GlobalKey();
 
+  /// nous permet d'uploader nos fichiers
+  final fileUploader = FileUploader();
+
   /// convertit le temps restant
   /// de l'enregistrement audio (Duration) en cours,
   /// en format mm:ss (string)
@@ -138,7 +140,6 @@ class _StepCreationState extends State<StepCreation>
 
   @override
   void dispose() {
-
     controller.dispose();
     audioPlayer.stop();
     audioPlayer.dispose();
@@ -202,57 +203,7 @@ class _StepCreationState extends State<StepCreation>
   /// SOUS_ETAPES represente l'etape actuelle
   int sousEtape = PRENDRE_PHOTO_VIDEO;
 
-  /// FONCTION
-  /*
-
-  Widget fnForSousEtape() {
-    if (sousEtape == PRENDRE_PHOTO) {
-      return prendrePhoto();
-    } 
-    
-    else if (sousEtape == MSG_AUDIO) {
-      return msgAudio();
-    } 
-    
-    else if (sousEtape == UPLOAD_PHOTO) {
-      return txtOuEmoji();
-    }
-
-    else if (sousEtape == UPLOAD_AUDIO) {
-      return enregistrer();
-    }
-
-    else if (sousEtape == INVENTAIRE) {
-      return inventaire();
-    }
-
-    else {
-      throw Error();
-    }
-  }
   
-  Widget prendrePhoto() {
-
-  }
-  
-  Widget msgAudio() {
-
-  }
-  
-  Widget txtOuEmoji() {
-
-  }
-
-  Widget enregistrer() {
-
-  }
-
-  Widget inventaire() {
-
-  }
-  
-  */
-
   /// IS_RECORDING représente si on est en train, ou pas,
   /// d'enregistrer un message audio
   ///
@@ -274,14 +225,7 @@ class _StepCreationState extends State<StepCreation>
       throw Error();
     }
   }
-  
-  Widget noRecording() {
-
-  }
-
-  Widget recording() {
-
-  }
+ 
 
   */
 
@@ -301,22 +245,6 @@ class _StepCreationState extends State<StepCreation>
     else {
       return ...();
     }
-  }
-
-  void ...() {
-
-  }
-
-  void ...() {
-
-  }
-
-  void ...() {
-
-  }
-
-  void ...() {
-
   }
 
   */
@@ -350,100 +278,26 @@ class _StepCreationState extends State<StepCreation>
     }
   }
 
-  Widget aaa() {
-
-  }
-
-  Widget aaa() {
-    
-  }
-
-  Widget aaa() {
-    
-  }
-
-  void bbb() {
-
-  }
-
-  void bbb() {
-    
-  }
-
-  void bbb() {
-    
-  }
-  
   */
 
-  /// TXT_OU_EMOJI représente ce qu'on veut afficher
-  /// sur la photo d'étape
-  ///
-  /// 0 pour DRAW_TEXT
-  /// 1 pour DRAW_EMOJI
-  //int _txtOuEmoji = DRAW_TEXT;
+  /// PHOTO_VIDEO_UPLOAD_STATUS représente 
+  /// l'état d'avancement de l'upload de photo/vidéo
+  int photoVideoUploadStatus = NOT_UPLOADED;
 
   /*
-  Widget txtOuEmoji() {
-    if (_txtOuEmoji == DRAW_TEXT) {
-      return xxx();
-    }
-
-    else if (_txtOuEmoji == DRAW_EMOJI) {
-      return yyy();
-    }
-
-    else {
-      throw Error();
+  fnForUpStatus() {
+    if (photoVideoUploadStatus == NOT_UPLOADED) {
+      return noUp();
+    } else if (photoVideoUploadStatus == UPLOAD_IN_PROGRESS) {
+      return upInProgress();
+    } else if (photoVideoUploadStatus == UPLOAD_SUCCESS) {
+      return upSuccess();
+    } else if (photoVideoUploadStatus == UPLOAD_FAIL) {
+      return upFail();
     }
   }
   */
-
-
   
-
-  /// CREATE_UPLOAD représente si on demarre l'upload
-  ///
-  /// false pour DONT_CREATE_UP
-  /// true pour CREATE_UP
-  bool _createUpload = DONT_CREATE_UP;
-
-  /*
-  fnForStartUpload() {
-    if (_createUpload == DONT_CREATE_UP) {
-      return dontStartUp();
-    }
-
-    else if (_createUpload == CREATE_UP) {
-      return startUp();
-    }
-
-    else {
-      throw Error();
-    }
-  }
-  */
-
-  static const bool SHOW_NEXT_BUTTON = true;
-  static const bool HIDE_NEXT_BUTTON = false;
-  bool _showNextButton = SHOW_NEXT_BUTTON;
-
-  /*
-  showNextBtn() {
-    if (_showNextButton == HIDE_NEXT_BUTTON) {
-
-    }
-
-    else if (_showNextButton == SHOW_NEXT_BUTTON) {
-
-    }
-
-    else {
-      throw Error();
-    }
-  }
-  
-  */
 
   /// nous permet de supprimer une photo
   /// stockée dans firebase storage
@@ -637,24 +491,7 @@ class _StepCreationState extends State<StepCreation>
 
   ///
   Widget uploadFilesPanel(Report userReport) {
-    var fileUploader = FileUploader();
-    fileUploader.uploadFile(_photoVideoFile);
-
-    return centeredMsg(
-      "assets/icon.png", 
-      "Upload en cours...", 
-      Colors.pink
-    );
-    
-    /*Uploader(
-      files: [_photoVideoFile, File(_recording.path)],
-      userReport: userReport,
-      uploadMsgs: [
-        "Upload de photo en cours...",
-        "Upload de message audio en cours..."
-      ],
-      onUploadsDone: [afterPhotoUploaded, afterAudioUploaded],
-    );*/
+    return centeredMsg("assets/icon.png", "Upload.", Colors.pink);
   }
 
   afterAudioUploaded(String newFilePath, String fileUrl, Report userReport) {
@@ -664,15 +501,6 @@ class _StepCreationState extends State<StepCreation>
     ///
     /// otherwise just store the new path
     storeNewAudioFilePath(newFilePath, fileUrl, userReport);
-
-    /// save the data
-    //userReport.save();
-
-    /// reset button so we
-    /// can upload a new photo
-    /*setState(() {
-                                          _createUpload = DONT_CREATE_UP;
-                                        });*/
   }
 
   /// l'inventaire d'objets
@@ -754,7 +582,7 @@ class _StepCreationState extends State<StepCreation>
       title: titleNavigation(title, userReport),
       actions: <Widget>[
         delButton(userReport, context),
-        hideOrShowNextButton(userReport),
+        nextButton(userReport),
       ],
     );
   }
@@ -1279,19 +1107,15 @@ class _StepCreationState extends State<StepCreation>
     }
   }
 
-  /// les icones pour ajouter texte / émoji
   List<Widget> uploadFilesIcons() {
-    return [];
-  }
-
-  List<Widget> uploadAudioIcons() {
     return [
-      uploadAudioIcon(),
+      uploadFilesIcon(),
     ];
   }
 
-  /// on peut ajouter text ou emoji
-  Widget uploadAudioIcon() {
+  
+
+  Widget uploadFilesIcon() {
     return IconButton(
       iconSize: ITEM_ICON_SIZE,
       icon: Icon(
@@ -1299,30 +1123,12 @@ class _StepCreationState extends State<StepCreation>
         size: BOTTOM_ICON_SIZE,
         color: Colors.pink,
       ),
-      onPressed: uploadAudioActions,
+      onPressed: uploadFilesActions,
     );
   }
 
-  /// que faire qd on veut uploader une photo
-  /// dans le cloud Firebase
-  uploadAudioActions() {
-    /// si aucun upload n'a été démarré
-    if (_createUpload == DONT_CREATE_UP) {
-      /// démarre l'upload
-      setState(() {
-        _createUpload = CREATE_UP;
-      });
-    }
-
-    /// si un upload est déja en cours
-    else if (_createUpload == CREATE_UP) {
-      /// informe l'user que du boulot a déja lieu
-      int durationMsec = 2000;
-      String msg = "Un upload de photo est déja en cours.";
-      displaySnackbar(_scaffoldKey, msg, durationMsec);
-    } else {
-      throw Error();
-    }
+  uploadFilesActions() {
+    
   }
 
   /// les icones de l'inventaire
@@ -1830,42 +1636,7 @@ class _StepCreationState extends State<StepCreation>
     userReport.save();
   }
 
-  /// on peut ajouter text ou emoji
-  Widget uploadPhotoIcon() {
-    return IconButton(
-      iconSize: ITEM_ICON_SIZE,
-      icon: Icon(
-        Icons.cloud_upload,
-        size: BOTTOM_ICON_SIZE,
-        color: Colors.pink,
-      ),
-      onPressed: uploadPhotoActions,
-    );
-  }
-
-  /// que faire qd on veut uploader une photo
-  /// dans le cloud Firebase
-  uploadPhotoActions() {
-    /// si aucun upload n'a été démarré
-    if (_createUpload == DONT_CREATE_UP) {
-      /// démarre l'upload
-      setState(() {
-        _createUpload = CREATE_UP;
-      });
-    }
-
-    /// si un upload est déja en cours
-    else if (_createUpload == CREATE_UP) {
-      /// informe l'user que du boulot a déja lieu
-      int durationMsec = 2000;
-      String msg = "Un upload de photo est déja en cours.";
-      displaySnackbar(_scaffoldKey, msg, durationMsec);
-    } else {
-      throw Error();
-    }
-  }
-
- 
+  
 
   afterPhotoUploaded(String newFilePath, String fileUrl, Report userReport) {
     /// if there's an existing photo path,
@@ -1971,14 +1742,11 @@ class _StepCreationState extends State<StepCreation>
       _isRecording = NO_RECORD;
       _recording = NO_AUDIO_FILE;
       _playerState = STOPPED;
-      //_txtOuEmoji = DRAW_TEXT;
-      _createUpload = DONT_CREATE_UP;
-      _showNextButton = SHOW_NEXT_BUTTON;
     });
   }
 
   String recordingPathOrUrl(Report userReport) {
-    if (_recording != NO_AUDIO_FILE /*&& _recording.path != null*/) {
+    if (_recording != NO_AUDIO_FILE) {
       return recordingPath();
     } else {
       return audioUrl(userReport);
@@ -2006,12 +1774,6 @@ class _StepCreationState extends State<StepCreation>
     return audioUrl;
   }
 
-
-  
-
-  
-  
-
   bool photoStepComplete() {
     return _photoVideoFile != NO_PHOTO;
   }
@@ -2019,8 +1781,6 @@ class _StepCreationState extends State<StepCreation>
   bool msgAudioStepComplete() {
     return _recording != NO_AUDIO_FILE;
   }
-
- 
 
   void noStepChoice(Choice choice) {
     var msg = "On reste ici !";
@@ -2052,8 +1812,6 @@ class _StepCreationState extends State<StepCreation>
     resetState(PRENDRE_PHOTO_VIDEO);
   }
 
-  
-
   void noOutcomeChoice() {
     displaySnackbar(_scaffoldKey, "On reste ici pour l'instant !", 2500);
   }
@@ -2072,8 +1830,6 @@ class _StepCreationState extends State<StepCreation>
   void finLeconChoice(Report userReport) {
     resetState(PREND_THUMBNAIL_PHOTO);
   }
-
-  
 
   Widget finLeconPanel(Report userReport) {
     return null;
@@ -2190,22 +1946,7 @@ class _StepCreationState extends State<StepCreation>
         2500);
   }
 
-  hideOrShowNextButton(Report userReport) {
-    if (_showNextButton == HIDE_NEXT_BUTTON) {
-      return Container();
-    } else if (_showNextButton == SHOW_NEXT_BUTTON) {
-      return nextButton(userReport);
-    } else {
-      throw Error();
-    }
-  }
-
-  void hideNextButton() {
-    setState(() {
-      _showNextButton = HIDE_NEXT_BUTTON;
-    });
-  }
-
+  
   void noFileChoice() {
     displaySnackbar(_scaffoldKey, "On ne prend pas de photo/vidéo.", 2500);
   }
