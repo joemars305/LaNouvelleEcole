@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:quizapp/parts/parts.dart';
 import '../services/services.dart';
-import '../shared/shared.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -52,7 +52,7 @@ class ProfileScreen extends StatelessWidget {
         ),
       );
     } else {
-      return LoadingScreen();
+      return centeredMsg("assets/icon.png", "Patiente un peu...", Colors.pink);
     }
   }
 

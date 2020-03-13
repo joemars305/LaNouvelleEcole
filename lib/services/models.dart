@@ -233,6 +233,7 @@ class LessonStep {
   String photoVideoFileUrl;
   int currentSubstep;
 
+
   int fileType;
 
   LessonStep({
@@ -243,6 +244,8 @@ class LessonStep {
     this.currentSubstep,
     this.fileType,
   });
+
+
 
   factory LessonStep.fromMap(Map data) {
     return LessonStep(

@@ -399,25 +399,8 @@ class _StepCreationState extends State<StepCreation>
   }
   */
 
-  /// TEXTS_AND_EMOJIS représente le texte
-  /// et les émojis qu'on veut ajouter
-  /// sur notre photo pour expliquer des trucs
-  ///
-  /// [] pour NO_TEXTS_AND_EMOJIS
-  /// List<Widget> autrement
-  List<Widget> _textsAndEmojis = [];
 
-  /*
-  fn() {
-    if (_textsAndEmojis == NO_TEXTS_AND_EMOJIS) {
-      return aaa();
-    }
-
-    else {
-      return bbb();
-    }
-  }
-  */
+  
 
   /// CREATE_UPLOAD représente si on demarre l'upload
   ///
@@ -654,7 +637,16 @@ class _StepCreationState extends State<StepCreation>
 
   ///
   Widget uploadFilesPanel(Report userReport) {
-    return Uploader(
+    var fileUploader = FileUploader();
+    fileUploader.uploadFile(_photoVideoFile);
+
+    return centeredMsg(
+      "assets/icon.png", 
+      "Upload en cours...", 
+      Colors.pink
+    );
+    
+    /*Uploader(
       files: [_photoVideoFile, File(_recording.path)],
       userReport: userReport,
       uploadMsgs: [
@@ -662,7 +654,7 @@ class _StepCreationState extends State<StepCreation>
         "Upload de message audio en cours..."
       ],
       onUploadsDone: [afterPhotoUploaded, afterAudioUploaded],
-    );
+    );*/
   }
 
   afterAudioUploaded(String newFilePath, String fileUrl, Report userReport) {
@@ -955,7 +947,6 @@ class _StepCreationState extends State<StepCreation>
     /// et vide panier de texte et emoji
     setState(() {
       _photoVideoFile = imgFile;
-      _textsAndEmojis = NO_TEXTS_AND_EMOJIS;
     });
   }
 
@@ -1874,76 +1865,7 @@ class _StepCreationState extends State<StepCreation>
     }
   }
 
-  /// ajoutons du texte
-  void addTextActions() {
-    /// essayons d'obtenir un texte venant de l'user
-    String title = "Ecris ton texte.";
-    String subtitle = "Ajoute texte ci-dessous";
-    String hint = "Pipi caca etc...";
-
-    Future<String> userInput = getUserInput(
-      context,
-      title,
-      subtitle,
-      hint,
-    );
-
-    handleFutureText(userInput);
-  }
-
-  /// une fois l'input user reçu,
-  /// faisons qqch avec
-  void handleFutureText(Future<String> userInput) {
-    userInput.then((userInput) {
-      ///
-      if (userInput == NO_USER_INPUT) {
-        return noText();
-      } else if (userInput == EMPTY_USER_INPUT) {
-        return emptyText();
-      } else if (userInput.length > 0) {
-        return handleText(userInput);
-      } else {
-        throw Error();
-      }
-    });
-  }
-
-  void noText() {
-    String msg = "Creation de texte annulée.";
-    int durationMsec = 2000;
-
-    displaySnackbar(_scaffoldKey, msg, durationMsec);
-  }
-
-  void emptyText() {
-    String msg = "Ecris du texte, s'il te plait.";
-    int durationMsec = 2000;
-
-    displaySnackbar(_scaffoldKey, msg, durationMsec);
-  }
-
-  /// que fait on avec le texte obtenu
-  void handleText(String userInput) {
-    /// on crée un dragbox
-    Offset initPos = Offset(250.0, 250.0);
-    String label = userInput;
-    double fontSize = 25;
-    Color outsideColor = Colors.red;
-    Color insideColor = Colors.white;
-
-    DragBox draggableText = new DragBox(
-      initPos,
-      label,
-      fontSize,
-      outsideColor,
-      insideColor,
-    );
-
-    /// on l'ajoute à la liste de text and drag
-    setState(() {
-      _textsAndEmojis.add(draggableText);
-    });
-  }
+ 
 
   afterPhotoUploaded(String newFilePath, String fileUrl, Report userReport) {
     /// if there's an existing photo path,
@@ -2050,7 +1972,6 @@ class _StepCreationState extends State<StepCreation>
       _recording = NO_AUDIO_FILE;
       _playerState = STOPPED;
       //_txtOuEmoji = DRAW_TEXT;
-      _textsAndEmojis = [];
       _createUpload = DONT_CREATE_UP;
       _showNextButton = SHOW_NEXT_BUTTON;
     });
@@ -2085,74 +2006,11 @@ class _StepCreationState extends State<StepCreation>
     return audioUrl;
   }
 
-  Widget txtEmojiPanel(Report userReport) {
-    if (theresTextOrEmojis()) {
-      return prendrePhotoVideoPanel(userReport, "");
-    } else {
-      return centeredMsg("assets/icon.png",
-          "Appuie sur + pour ajouter du texte/émoji", Colors.pink);
-    }
-  }
 
-  List<Widget> txtEmojiIcons(Report userReport) {
-    return [
-      addTxtOrEmojiIcon(userReport),
-      deleteLatestTxtEmojiIcon(),
-    ];
-  }
+  
 
-  deleteLatestTxtEmojiIcon() {
-    return IconButton(
-      iconSize: ITEM_ICON_SIZE,
-      icon: Icon(
-        Icons.delete,
-        size: BOTTOM_ICON_SIZE,
-        color: Colors.pink,
-      ),
-      onPressed: deleteTxtActions,
-    );
-  }
-
-  addTxtOrEmojiIcon(Report userReport) {
-    return IconButton(
-      iconSize: ITEM_ICON_SIZE,
-      icon: Icon(
-        Icons.add,
-        size: BOTTOM_ICON_SIZE,
-        color: Colors.pink,
-      ),
-      onPressed: addTextOrEmojiActions,
-    );
-  }
-
-  void addTextOrEmojiActions() {
-    List<Choice> choices = [
-      Choice("🔤 Du texte", ADD_TEXT),
-      Choice("👉 Un émoji", ADD_EMOJI),
-    ];
-
-    Future<Choice> userChoice = getUserChoice(
-      context,
-      "Tu veux ajouter du texte, ou un émoji ? 💖",
-      choices,
-    );
-
-    handleTextEmojiChoice(userChoice);
-  }
-
-  void handleTextEmojiChoice(Future<Choice> futureChoice) {
-    futureChoice.then((choice) {
-      if (choice == NO_FUTURE_CHOICE) {
-        return addTxtEmCanceled();
-      } else if (choice.choiceValue == ADD_TEXT) {
-        return addTextActions();
-      } else if (choice.choiceValue == ADD_EMOJI) {
-        return addEmojiChoices();
-      } else {
-        throw Error();
-      }
-    });
-  }
+  
+  
 
   bool photoStepComplete() {
     return _photoVideoFile != NO_PHOTO;
@@ -2162,74 +2020,7 @@ class _StepCreationState extends State<StepCreation>
     return _recording != NO_AUDIO_FILE;
   }
 
-  bool theresTextOrEmojis() {
-    return _textsAndEmojis.length > 0;
-  }
-
-  void addTxtEmCanceled() {
-    displaySnackbar(
-      _scaffoldKey,
-      "🌎🌞💨 On ajoute pas de texte ou émoji 🌎💨🌞💨",
-      2000,
-    );
-  }
-
-  void addEmojiChoices() {
-    String title = "Choisis un émoji.";
-
-    List<Choice> emojis = [
-      Choice("👈🏾", "👈🏾"),
-      Choice("👉🏾", "👉🏾"),
-      Choice("👆🏾", "👆🏾"),
-      Choice("👇🏾", "👇🏾"),
-      Choice("👈", "👈"),
-      Choice("👉", "👉"),
-      Choice("👆", "👆"),
-      Choice("👇", "👇"),
-      Choice("👌🏻", "👌🏻"),
-      Choice("👌🏻", "👌🏻"),
-    ];
-
-    Future<Choice> userChoice = getUserChoice(
-      context,
-      title,
-      emojis,
-    );
-
-    handleFutureEmojiChoice(userChoice);
-  }
-
-  void handleFutureEmojiChoice(Future<Choice> futureChoice) {
-    futureChoice.then((choice) {
-      if (choice == NO_FUTURE_CHOICE) {
-        return noEmojiChoice();
-      } else {
-        return addEmojiActions(choice.choiceValue);
-      }
-    });
-  }
-
-  void noEmojiChoice() {
-    displaySnackbar(
-      _scaffoldKey,
-      "🌎💨🌞 On ajoute pas d'émoji 🌎💨🌞",
-      2000,
-    );
-  }
-
-  void addEmojiActions(String emoji) {
-    var dragEmoji = DragBox(
-      Offset(250.0, 250.0),
-      emoji,
-      25,
-      NO_DATA,
-      NO_DATA,
-    );
-
-    setState(() {
-      _textsAndEmojis.add(dragEmoji);
-    });
-  }
+ 
 
   void noStepChoice(Choice choice) {
     var msg = "On reste ici !";
@@ -2261,13 +2052,7 @@ class _StepCreationState extends State<StepCreation>
     resetState(PRENDRE_PHOTO_VIDEO);
   }
 
-  void deleteTxtActions() {
-    if (theresTextOrEmojis()) {
-      setState(() {
-        _textsAndEmojis.removeLast();
-      });
-    }
-  }
+  
 
   void noOutcomeChoice() {
     displaySnackbar(_scaffoldKey, "On reste ici pour l'instant !", 2500);
@@ -2288,23 +2073,7 @@ class _StepCreationState extends State<StepCreation>
     resetState(PREND_THUMBNAIL_PHOTO);
   }
 
-  void incrementIfFirst3StepsCompleted() async {
-    /// - si les 3 premières sous
-    ///   étapes ont été remplies,
-    ///   on sauvegarde le contenu
-    ///   d u canvas photo
-    if (photoStepComplete() && msgAudioStepComplete() && theresTextOrEmojis()) {
-      await uglifyPhotoFile();
-
-      incrementSubstep();
-    }
-
-    /// - sinon on informe user qu'il doit remplir les
-    ///   3 premières sous étapes avant de continuer
-    else {
-      userDoUrJob();
-    }
-  }
+  
 
   Widget finLeconPanel(Report userReport) {
     return null;
