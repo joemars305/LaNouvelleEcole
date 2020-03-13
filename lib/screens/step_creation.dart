@@ -489,9 +489,18 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  ///
   Widget uploadFilesPanel(Report userReport) {
-    return centeredMsg("assets/icon.png", "Upload.", Colors.pink);
+    if (photoVideoUploadStatus == NOT_UPLOADED) {
+      return noUp();
+    } else if (photoVideoUploadStatus == UPLOAD_IN_PROGRESS) {
+      return upInProgress();
+    } else if (photoVideoUploadStatus == UPLOAD_SUCCESS) {
+      return upSuccess();
+    } else if (photoVideoUploadStatus == UPLOAD_FAIL) {
+      return upFail();
+    } else {
+      throw Error();
+    }
   }
 
   afterAudioUploaded(String newFilePath, String fileUrl, Report userReport) {
