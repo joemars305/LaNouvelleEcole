@@ -491,7 +491,7 @@ class _StepCreationState extends State<StepCreation>
 
   Widget uploadFilesPanel(Report userReport) {
     if (photoVideoUploadStatus == NOT_UPLOADED) {
-      return noUp();
+      return noFilesUploaded();
     } else if (photoVideoUploadStatus == UPLOAD_IN_PROGRESS) {
       return upInProgress();
     } else if (photoVideoUploadStatus == UPLOAD_SUCCESS) {
