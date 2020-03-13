@@ -73,7 +73,7 @@ class _UploaderState extends State<Uploader> {
   final FirebaseStorage _storage =
       FirebaseStorage(storageBucket: storageBucketUri);
 
-  StorageUploadTask _uploadTask = NO_UPLOAD_TASK;
+  StorageUploadTask _uploadTask = NO_DATA;
 
   String _uploadMsg;
 
@@ -296,7 +296,7 @@ class _UploaderState extends State<Uploader> {
   }
 
   bool uploadTaskExists() {
-    return _uploadTask != NO_UPLOAD_TASK;
+    return _uploadTask != NO_DATA;
   }
 
   uploadMsg() {

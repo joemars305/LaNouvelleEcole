@@ -127,13 +127,6 @@ const ITEM_ICON_SIZE = 15.0;
 /// la couleur des icones d'un objet
 const ITEM_ICON_COLOR = Colors.white;
 
-/// TXT_OU_EMOJI représente ce qu'on veut afficher
-/// sur la photo d'étape
-///
-/// 0 pour DRAW_TEXT
-/// 1 pour DRAW_EMOJI
-const DRAW_TEXT = 0;
-const DRAW_EMOJI = 1;
 
 /// TEXTS_AND_EMOJIS représente le texte
 /// et les émojis qu'on veut ajouter
@@ -145,45 +138,7 @@ const DRAW_EMOJI = 1;
 /// TAILLE DES ICONES DU BOTTOM BAR
 const BOTTOM_ICON_SIZE = 30.0;
 
-/// UPLOAD_TASK représente l"upload d'un fichier vers
-/// le cloud Firebase
-///
-/// null pour NO_UPLOAD_TASK (pas d'upload en cours)
-/// un StorageUploadTask autrement (un upload est en cours/pause/terminé)
-const NO_UPLOAD_TASK = null;
 
-/// UPLOAD_STATUS représente l'état actuel du
-/// Uploader existant
-///
-/// 0 pour UP_IN_PROGRESS
-/// 1 pour UP_PAUSED
-/// 2 pour UP_COMPLETED
-
-/*
-fnForUpStatus() {
-  if (_uploadTask.isInProgress) {
-    return UP_IN_PROGRESS;
-  }
-
-  else if (_uploadTask.isPaused) {
-    return UP_PAUSED;
-  }
-
-  else if (_uploadTask.isComplete) {
-    return UP_COMPLETED;
-  }
-}
-*/
-const UP_IN_PROGRESS = 0;
-const UP_PAUSED = 1;
-const UP_COMPLETED = 2;
-
-/// CREATE_UPLOAD représente si on demarre l'upload
-///
-/// false pour DONT_CREATE_UP
-/// true pour CREATE_UP
-const DONT_CREATE_UP = false;
-const CREATE_UP = true;
 
 
 
@@ -215,30 +170,6 @@ fnForPhotoPath(String photoPath) {
 const storageBucketUri = 'gs://la-nouvelle-ecole-7e29b.appspot.com';
 
 
-/// PHOTO_URL représente
-/// le moyen d'affichage de photo
-/// via file ou via url
-/// 
-/// null pour NO_PHOTO_URL
-/// String autrement
-
-/*
-photoUrl() {
-  if (photoUrl == NO_PHOTO_URL) {
-    return noUrl();
-  }
-
-  else if (photoUrl is String &&
-           photoUrl.length > 0) {
-    return url();
-  }
-
-  else {
-    throw Error();
-  }
-}
-*/
-const NO_PHOTO_URL = null;
 
 /// no data available
 const NO_DATA = null;
@@ -272,3 +203,8 @@ const VIDEO_FILE = 0;
 const PHOTO_AND_VIDEO = 0;
 const PHOTO_ONLY = 1;
 const VIDEO_ONLY = 2;
+
+const NOT_UPLOADED = 0;
+const UPLOAD_IN_PROGRESS = 1;
+const UPLOAD_SUCCESS = 2;
+const UPLOAD_FAIL = 3;
