@@ -26,7 +26,7 @@ const NO_TEXT = null;
 
 /// howManySubsteps est la quantité
 /// de sous étapes à effectuer
-const howManySubsteps = 7;
+const howManySubsteps = 4;
 const lastStep = howManySubsteps - 1;
 
 /// represente l'etape prendre une photo
@@ -43,14 +43,15 @@ const MSG_AUDIO = 1;
 const INVENTAIRE = 2;
 
 /// represente l'etape UPLOAD_PHOTO
+//const UPLOAD_FILES = 3;
+
+/// represente l'étape ou on prend un photo de thumbnail
+/// et on upload le contenu, etc...
 const UPLOAD_FILES = 3;
 
-/// represente les deux étapes finales,
-/// ou nous prenons une photo du produit fini, 
-/// puis on ajoute des infos approvisionnement
-const PREND_THUMBNAIL_PHOTO = 4;
-const COMPLETE_INVENTORY = 5;
-const UPLOAD_THUMBNAIL = 6;
+const COMPLETE_INVENTORY = NO_DATA;
+const UPLOAD_THUMBNAIL = NO_DATA;
+const PREND_THUMBNAIL_PHOTO = NO_DATA;
 
 /// IS_RECORDING représente si on est en train, ou pas,
 /// d'enregistrer un message audio

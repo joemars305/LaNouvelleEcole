@@ -1,18 +1,20 @@
 import 'dart:io';
-import 'dart:convert';
-import 'package:mime/mime.dart';
+//import 'dart:convert';
+//import 'package:mime/mime.dart';
 import 'package:dio/dio.dart';
 import 'package:quizapp/parts/consts.dart';
+import 'package:http/http.dart' as http;
 
 /// permet d'uploader et supprimer
 /// des fichiers photo / audio / vidéo
 /// avec l'API de Cloudinary.
 
 class FileUploader {
-  static const _uploadPreset = "rvx2lyep";
+  /*static const _uploadPreset = "rvx2lyep";
   static const _cloudName = "dn1vcwy8m";
   static const _ressourceType = "auto";
-  
+  static const _apiKey = "316872425568417";
+  static const _apiSecret = "0k-azq69LgAx3rkUpcBOK8LO_lY";*/
   
   Dio _dio = new Dio();
 
@@ -37,22 +39,28 @@ class FileUploader {
     try {
       ///l'url et le form data de la request d'upload POST
       var uploadUrl = _getRequestUploadUrl();
-      var uploadData = await _getUploadData(file);
+      //var uploadData = await _getUploadData(file);
 
       /// on lance une requete d'upload 
       /// et on attend le résultat
-      Response _response = await _dio.post(
+      http.Response _response = await http.put(
         uploadUrl,
-        data: uploadData,
-        onSendProgress: onUploadProgress,
+        headers: {
+          'Checksum': '',
+        },
+        
+        body: file.readAsBytesSync().toString(),
       );
 
       /// l'objet recu en réponse
-      var responseData = _response.data;
+      var responseData = _response.body;
 
       /// le code de la réponse
       var responseCode = _response.statusCode;
 
+      print("data:  $responseData");
+      print("code:  $responseCode");
+      
       /// après avoir reçu la réponse de
       /// la requete,
       /// on run la fonction onUploadDone
@@ -73,18 +81,17 @@ class FileUploader {
   /// nous fournit l'url permettant
   /// un upload de fichier vers le cloud
   String _getRequestUploadUrl() {
-    return "https://api.cloudinary.com/v1_1/$_cloudName/$_ressourceType/upload/";
+    return "https://storage.bunnycdn.com/lanouvelleecole/testons/test.png";
   }
 
   /// les parametres de la requete HTTP d'upload (POST)
-  _getUploadData(File file) async {
-    return {
-      "file": await _getBase64Uri(file),
-      "upload_preset": _uploadPreset,
-    };
-  }
+  /*_getUploadData(File file) async {
+    return json.encode({
 
-  _getBase64Uri(File file) async {
+    });
+  }*/
+
+  /*_getBase64Uri(File file) async {
     List<int> fileBytes = await file.readAsBytes();
     String filePath = file.path;
     String base64File = base64Encode(fileBytes);
@@ -95,5 +102,68 @@ class FileUploader {
     print(base64Header);
 
     return fullBase64Uri;
+  }*/
+
+
+  /// delete un fichier avec une requete POST
+  /// 
+  /// INPUTS:
+  /// 
+  /// - publicId, un String permettant de supprimer le fichier
+  /// dans le cloud
+  /// 
+  /// OUTPUT:
+  /// 
+  /// - 
+  /// 
+  deleteFile(String publicId, Function onDeleteDone) async {
+    try {
+      ///l'url et le form data de la request d'upload POST
+      var deleteUrl = _getRequestDeleteUrl();
+      var deleteData = _getRequestDeleteData(publicId);
+
+     
+
+      /// on lance une requete d'upload 
+      /// et on attend le résultat
+      Response _response = await _dio.post(
+        deleteUrl,
+        data: deleteData,
+      );
+
+      print("cacatus");
+
+      /// l'objet recu en réponse
+      var responseData = _response.data;
+
+      /// le code de la réponse
+      var responseCode = _response.statusCode;
+
+      
+
+      /// après avoir reçu la réponse de
+      /// la requete,
+      /// on run la fonction onUploadDone
+      onDeleteDone(responseData, responseCode);
+      
+    } on DioError catch (e) {
+      print("Oups.. pepine...");
+      print(e);
+
+      return NO_DATA;
+    }
+  }
+
+  /// nous fournit l'url permettant
+  /// un upload de fichier vers le cloud
+  String _getRequestDeleteUrl() {
+    return "";//"https://api.cloudinary.com/v1_1/$_cloudName/$_ressourceType/destroy";
+  }
+
+  /// les parametres de la requete HTTP d'upload (POST)
+  _getRequestDeleteData(String publicId)  {
+    return {
+      "public_id": publicId,
+    };
   }
 }

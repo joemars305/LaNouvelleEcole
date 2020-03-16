@@ -246,16 +246,23 @@ List fnForChoices(List<Choice> choices) {
 */
 
 /// nous permet d'afficher un message centré
-Widget centeredMsg(String iconPath, String text, Color color) {
+Widget centeredMsg(String iconPath, String text, Color color,
+    [List<Widget> children]) {
+  List<Widget> columnChildren = <Widget>[
+    icon(iconPath),
+    msg(text),
+  ];
+
+  if (children != NO_DATA) {
+    columnChildren = columnChildren + children;
+  }
+
   return Container(
     color: color,
     child: Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          icon(iconPath),
-          msg(text),
-        ],
+        children: columnChildren,
       ),
     ),
   );
@@ -283,12 +290,9 @@ Widget msg(String msg) {
 }
 
 Future deleteLessonData(Report userReport, int index) async {
-
   var lesson = userReport.babyLessons[index];
 
   var result = lesson.deleteLessonData();
-
-
 
   return result;
 }

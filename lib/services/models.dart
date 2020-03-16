@@ -249,10 +249,10 @@ class LessonStep {
 
   factory LessonStep.fromMap(Map data) {
     return LessonStep(
-      audioFilePath: data['audioFilePath'] ?? null,
-      photoVideoFilePath: data['photoFilePath'] ?? null,
-      audioFileUrl: data['audioFileUrl'] ?? null,
-      photoVideoFileUrl: data['photoFileUrl'] ?? null,
+      audioFilePath: data['audioFilePath'] ?? NO_DATA,
+      photoVideoFilePath: data['photoVideoFilePath'] ?? NO_DATA,
+      audioFileUrl: data['audioFileUrl'] ?? NO_DATA,
+      photoVideoFileUrl: data['photoVideoFileUrl'] ?? NO_DATA,
       currentSubstep: data['currentSubstep'] ?? 0,
       fileType: data['fileType'] ?? PHOTO_FILE,
       publicId: data['publicId'] ?? NO_DATA,
@@ -261,10 +261,10 @@ class LessonStep {
 
   Map toMap() {
     return {
-      'audioFilePath': audioFilePath ?? null,
-      'photoFilePath': photoVideoFilePath ?? null,
-      'audioFileUrl': audioFileUrl ?? null,
-      'photoFileUrl': photoVideoFileUrl ?? null,
+      'audioFilePath': audioFilePath ?? NO_DATA,
+      'photoVideoFilePath': photoVideoFilePath ?? NO_DATA,
+      'audioFileUrl': audioFileUrl ?? NO_DATA,
+      'photoVideoFileUrl': photoVideoFileUrl ?? NO_DATA,
       'currentSubstep': currentSubstep ?? 0,
       'publicId': publicId ?? NO_DATA,
       'fileType': fileType ?? PHOTO_FILE,

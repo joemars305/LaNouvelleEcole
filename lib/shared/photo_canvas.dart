@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:quizapp/parts/parts.dart';
 import 'package:chewie/chewie.dart';
@@ -47,7 +49,9 @@ class PhotoVideoCanvas extends StatefulWidget {
   /// si photo uploadée, l'url
   final String fileUrl;
 
- 
+  /// le path local du fichier photo/video
+  final String filePath;
+
   PhotoVideoCanvas({
     Key key,
     this.file,
@@ -55,6 +59,7 @@ class PhotoVideoCanvas extends StatefulWidget {
     this.photoSize,
     this.noFileText,
     this.fileUrl,
+    this.filePath,
   }) : super(key: key);
 
   @override
@@ -155,7 +160,7 @@ class _PhotoVideoCanvasState extends State<PhotoVideoCanvas> {
   }
 
   bool nothingToShow() {
-    return widget.file == NO_DATA && widget.fileUrl == NO_DATA;
+    return widget.file == NO_DATA && widget.fileUrl == NO_DATA && widget.filePath == NO_DATA;
   }
 
   nyanCat() {
@@ -184,6 +189,9 @@ class _PhotoVideoCanvasState extends State<PhotoVideoCanvas> {
   photoUrlOrFile() {
     if (widget.file != NO_DATA) {
       return fileImage();
+    } else if (widget.filePath != NO_DATA) {
+      print("display from local file");
+      return filePathImage();
     } else if (widget.fileUrl != NO_DATA) {
       return networkImage();
     } else {
@@ -191,18 +199,6 @@ class _PhotoVideoCanvasState extends State<PhotoVideoCanvas> {
     }
   }
 
-  /// returns first the local photo/video file,
-  /// if there's one,
-  /// or the photo/video url
-  fileOrUrl() {
-    if (widget.file != NO_DATA) {
-      return widget.file;
-    } else if (widget.fileUrl != NO_DATA) {
-      return widget.fileUrl;
-    } else {
-      throw Error();
-    }
-  }
 
   /// create a VideoPlayerController
   /// first from a local file,
@@ -211,6 +207,9 @@ class _PhotoVideoCanvasState extends State<PhotoVideoCanvas> {
   getVideoPlayerController() {
     if (widget.file != NO_DATA) {
       return VideoPlayerController.file(widget.file);
+    } else if (widget.filePath != NO_DATA) {
+      print("display from local file");
+      return VideoPlayerController.file(File(widget.filePath));
     } else if (widget.fileUrl != NO_DATA) {
       return VideoPlayerController.network(widget.fileUrl);
     } else {
@@ -278,8 +277,15 @@ class _PhotoVideoCanvasState extends State<PhotoVideoCanvas> {
     return NetworkImage(widget.fileUrl);
   }
 
+  /// affiche l'image à partir du File
   fileImage() {
     return FileImage(widget.file);
+  }
+
+  /// affiche l'image à partir du path local
+  filePathImage() {
+    print("display from local file");
+    return FileImage(File(widget.filePath));
   }
 
   displayFutureVideoCanvas() {

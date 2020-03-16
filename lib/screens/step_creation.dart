@@ -1,5 +1,3 @@
-
-/// - implémente un upload de photo video via cloudfare, ou autre CDN
 ///
 /// - Dans la liste de choix de Etape .. (../..),
 /// ajoute un choix permettant de passer au meme écran que lesson_viewer,
@@ -31,17 +29,17 @@
 ///   un lieu d'approvisionnement de ressource,
 ///   payant ou naturel.
 /// * le prix total de tous les objets topbar
+///
+/// - ajoute portrait/paysage
+///
+/// - implémente l'upload du contenu et la finalisation de la leçon
 import 'dart:io';
 import 'dart:ui';
 import 'package:audio_recorder/audio_recorder.dart';
-import 'package:filesize/filesize.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:provider/provider.dart';
 import 'package:quizapp/parts/cloudinary_api.dart';
 import 'package:quizapp/parts/parts.dart';
 import 'package:quizapp/services/services.dart';
@@ -49,6 +47,7 @@ import 'package:quizapp/shared/photo_canvas.dart';
 import 'package:file/local.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart';
 
 import '../parts/consts.dart';
 import '../parts/parts.dart';
@@ -208,6 +207,22 @@ class _StepCreationState extends State<StepCreation>
   /// SOUS_ETAPES represente l'etape actuelle
   int sousEtape = PRENDRE_PHOTO_VIDEO;
 
+  /*
+  fnForSousEtape() {
+    if (sousEtape == PRENDRE_PHOTO_VIDEO) {
+      prendrePhotoVideo();
+    } else if (sousEtape == MSG_AUDIO) {
+      msgAudio();
+    } else if (sousEtape == INVENTAIRE) {
+      inventaire();
+    } else if (sousEtape == UPLOAD_FILES) {
+      uploadFiles();
+    } else {
+      throw Error();
+    }
+  }
+  */
+
   /// IS_RECORDING représente si on est en train, ou pas,
   /// d'enregistrer un message audio
   ///
@@ -235,9 +250,9 @@ class _StepCreationState extends State<StepCreation>
 
   /// RECORDING représente le message audio
   ///
-  /// null pour NO_AUDIO_FILE
-  /// new Recording(...) pour AUDIO_FILE
-  Recording _recording = NO_AUDIO_FILE;
+  /// null pour NO_DATA
+  /// File autrement
+  File _recording = NO_DATA;
 
   /*
   
@@ -302,17 +317,6 @@ class _StepCreationState extends State<StepCreation>
   }
   */
 
-  /// combien de bytes envoyés dans le cloud ?
-  int _sent = 0;
-
-  /// taille en bytes du fichier en cours d'envoi
-  int _total = 0;
-
-  /// nous permet de supprimer une photo
-  /// stockée dans firebase storage
-  final FirebaseStorage _storage =
-      FirebaseStorage(storageBucket: storageBucketUri);
-
   /// l'event qui remet a zero le state du player
   /// lorsque un fichier audio vient d'etre joué jusqu'a la fin
   void setCompletionEvent() {
@@ -335,14 +339,6 @@ class _StepCreationState extends State<StepCreation>
       return uploadFilesPanel(userReport);
     } else if (sousEtape == INVENTAIRE) {
       return inventairePanel(userReport);
-    } else if (sousEtape == FIN_LECON) {
-      return finLeconPanel(userReport);
-    } else if (sousEtape == PREND_THUMBNAIL_PHOTO) {
-      return prendThumbnailPanel(userReport);
-    } else if (sousEtape == COMPLETE_INVENTORY) {
-      return completeInventoryPanel(userReport);
-    } else if (sousEtape == UPLOAD_THUMBNAIL) {
-      return uploadThumbPanel(userReport);
     } else {
       throw Error();
     }
@@ -363,6 +359,7 @@ class _StepCreationState extends State<StepCreation>
         fileType: _fileType != NO_DATA ? _fileType : currentStep.fileType,
         noFileText: msg,
         fileUrl: currentStep.photoVideoFileUrl,
+        filePath: currentStep.photoVideoFilePath,
       ),
     );
   }
@@ -390,7 +387,7 @@ class _StepCreationState extends State<StepCreation>
 
   /// quel instructions donner a l'user durant étape audio
   String noRecordingMsg() {
-    if (_recording == NO_AUDIO_FILE) {
+    if (_recording == NO_DATA) {
       return "Appuie sur le micro pour enregistrer un message audio.";
     } else {
       return "Appuie sur l'icone play pour écouter le message audio.";
@@ -512,15 +509,6 @@ class _StepCreationState extends State<StepCreation>
     }
   }
 
-  afterAudioUploaded(String newFilePath, String fileUrl, Report userReport) {
-    /// if there's an existing photo path,
-    /// delete the photo at that path in firebase,
-    /// and store the new path,
-    ///
-    /// otherwise just store the new path
-    storeNewAudioFilePath(newFilePath, fileUrl, userReport);
-  }
-
   /// l'inventaire d'objets
   Widget inventairePanel(Report userReport) {
     /// combien d'items individuels existent dans l'inventaire ?
@@ -597,24 +585,25 @@ class _StepCreationState extends State<StepCreation>
 
     return AppBar(
       leading: backButton(),
-      title: titleNavigation(title, userReport),
+      title: titleNavigation(title, userReport, context),
       actions: <Widget>[
         delButton(userReport, context),
-        nextButton(userReport),
+        nextButton(userReport, context),
       ],
     );
   }
 
-  Widget titleNavigation(String title, Report userReport) {
+  Widget titleNavigation(
+      String title, Report userReport, BuildContext context) {
     return new GestureDetector(
       onTap: () {
-        goToStepActions(userReport);
+        goToStepActions(userReport, context);
       },
       child: new Text(title),
     );
   }
 
-  void goToStepActions(Report userReport) {
+  void goToStepActions(Report userReport, BuildContext context) {
     List<Choice> choices = stepsChoices(userReport);
 
     Future<Choice> userChoice = getUserChoice(
@@ -662,13 +651,13 @@ class _StepCreationState extends State<StepCreation>
   /// de passer d'une substep a une autre
   /// puis de passer à une autre étape
   /// lorsque toutes les substep sont ok
-  Widget nextButton(Report userReport) {
+  Widget nextButton(Report userReport, BuildContext context) {
     return IconButton(
       icon: Icon(
         Icons.arrow_forward,
       ),
       onPressed: () async {
-        await nextButtonAction(userReport);
+        await nextButtonAction(userReport, context);
       },
     );
   }
@@ -716,20 +705,24 @@ class _StepCreationState extends State<StepCreation>
 
   /// les actions a effectuer pour passer
   /// d'une substep à un autre
-  Future<void> nextButtonAction(Report userReport) async {
+  Future<void> nextButtonAction(Report userReport, BuildContext context) async {
     if (sousEtape < lastStep) {
-      if (sousEtape == UPLOAD_FILES) {
-        nextStepOrLessonOver(userReport);
-      } else if (sousEtape == PREND_THUMBNAIL_PHOTO) {
-        //await uglifyPhotoFile();
+      if (sousEtape == PRENDRE_PHOTO_VIDEO) {
+        savePhotoVideo(_photoVideoFile, _fileType, userReport);
         incrementSubstep();
+      } else if (sousEtape == MSG_AUDIO) {
+        saveAudioPath(_recording, userReport);
+        incrementSubstep();
+      } else if (sousEtape == INVENTAIRE) {
+        nextStepOrLessonOver(userReport, context);
+      } else if (sousEtape == UPLOAD_FILES) {
       } else {
-        incrementSubstep();
+        throw Error();
       }
     }
   }
 
-  void nextStepOrLessonOver(Report userReport) {
+  void nextStepOrLessonOver(Report userReport, BuildContext context) {
     var choices = [
       Choice("Etape suivante !", ETAP_SUIV),
       Choice("La leçon est terminée !", FIN_LECON),
@@ -828,43 +821,37 @@ class _StepCreationState extends State<StepCreation>
   }
 
   // la barre d'icones en bas de la photo
-  Widget getBottomBar(Report userReport) {
+  Widget getBottomBar(Report userReport, BuildContext context) {
     return BottomAppBar(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         // icones homogènement éparpillées
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: substepIcons(userReport),
+        children: substepIcons(userReport, context),
       ),
     );
   }
 
   /// les icones de la sous étape en cours
-  List<Widget> substepIcons(Report userReport) {
+  List<Widget> substepIcons(Report userReport, BuildContext context) {
     if (sousEtape == PRENDRE_PHOTO_VIDEO) {
-      return prendrePhotoIcons();
+      return prendrePhotoIcons(context);
     } else if (sousEtape == MSG_AUDIO) {
       return msgAudioIcons(userReport);
     } else if (sousEtape == UPLOAD_FILES) {
       return uploadFilesIcons(userReport);
-    } else if (sousEtape == UPLOAD_THUMBNAIL) {
-      return uploadThumbIcons(userReport);
     } else if (sousEtape == INVENTAIRE) {
-      return inventaireIcons(userReport);
-    } else if (sousEtape == PREND_THUMBNAIL_PHOTO) {
-      return thumbnailIcons(userReport);
-    } else if (sousEtape == COMPLETE_INVENTORY) {
-      return completeInventaireIcons(userReport);
+      return inventaireIcons(userReport, context);
     } else {
       throw Error();
     }
   }
 
   /// les icones de l'étape photo
-  List<Widget> prendrePhotoIcons() {
+  List<Widget> prendrePhotoIcons(BuildContext context) {
     return [
-      photoCameraIcon(PHOTO_AND_VIDEO),
-      photoLibraryIcon(PHOTO_AND_VIDEO),
+      photoCameraIcon(PHOTO_AND_VIDEO, context),
+      photoLibraryIcon(PHOTO_AND_VIDEO, context),
       photoSizeIcon(),
     ];
   }
@@ -978,14 +965,17 @@ class _StepCreationState extends State<StepCreation>
 
   ///
   void playIconActions(Report userReport) async {
-    var audioUrl =
-        userReport.getLatestBabyLessonSeen().getCurrentStep().audioFileUrl;
+    var currentStep = userReport.getLatestBabyLessonSeen().getCurrentStep();
+    var audioUrl = currentStep.audioFileUrl;
+    var audioPath = currentStep.audioFilePath;
+    File file;
 
-    /// si il existe un fichier audio ou une url
-    if (_recording != NO_AUDIO_FILE || audioUrl != NO_DATA) {
+    print("play: $audioPath");
+
+    if (audioUrl != NO_DATA || audioPath != NO_DATA || _recording != NO_DATA) {
       await audioPlayer.play(
-        recordingPathOrUrl(userReport),
-        isLocal: localOrNot(userReport),
+        recordingPathOrUrl(_recording, audioUrl, audioPath),
+        isLocal: localOrNot(userReport, audioPath),
       );
 
       setState(() {
@@ -1075,8 +1065,11 @@ class _StepCreationState extends State<StepCreation>
       if (!(await AudioRecorder.isRecording)) {
         print("start recording");
 
+        /// l'adresse de résidence du fichier audio
+        var filePath = await getExternalStorageFilePath(NO_DATA, '.m4a');
+
         /// démarre l'enregistrement audio
-        await AudioRecorder.start();
+        await AudioRecorder.start(path: filePath);
 
         /// remet l'animation de countdown au début
         controller.reverse(from: BEGIN_ANIM);
@@ -1084,7 +1077,6 @@ class _StepCreationState extends State<StepCreation>
         /// update le state pour qu'on
         /// puisse voir les changements a l'écran
         setState(() {
-          _recording = new Recording(duration: new Duration(), path: "");
           _isRecording = WE_RECORD;
         });
       } else {
@@ -1104,15 +1096,12 @@ class _StepCreationState extends State<StepCreation>
       if (await AudioRecorder.isRecording) {
         /// arrete l'enregistrement audio
         var recording = await AudioRecorder.stop();
-        print("Stop recording: ${recording.path}");
 
-        /// affiche la taille du fichier audio en bytes (octets)
-        File file = widget.localFileSystem.file(recording.path);
-        print("  File length: ${await file.length()}");
+        print("Stop recording: ${recording.path}");
 
         /// update le state
         setState(() {
-          _recording = recording;
+          _recording = getRecordingFile(recording);
           _isRecording = NO_RECORD;
         });
 
@@ -1123,6 +1112,11 @@ class _StepCreationState extends State<StepCreation>
     } catch (e) {
       print(e);
     }
+  }
+
+  File getRecordingFile(Recording recording) {
+    File file = widget.localFileSystem.file(recording.path);
+    return file;
   }
 
   List<Widget> uploadFilesIcons(Report userReport) {
@@ -1139,56 +1133,14 @@ class _StepCreationState extends State<StepCreation>
         size: BOTTOM_ICON_SIZE,
         color: Colors.pink,
       ),
-      onPressed: () {
-        uploadFilesActions(userReport);
-      },
+      onPressed: () {},
     );
   }
 
-  uploadFilesActions(Report userReport) {
-    /// si y'a pas d'up en cours,
-    /// demarre l'up de photo/vidéo
-    if (photoVideoUploadStatus == NOT_UPLOADED) {
-      startFileUpload(userReport);
-    }
-
-    /// si y'a déja un up en cours,
-    /// informe user
-    else if (photoVideoUploadStatus == UPLOAD_IN_PROGRESS) {
-      uploadAlreadyGoingOn();
-    }
-
-    /// si un up successful à eu lieu,
-    /// on  reupload
-    else if (photoVideoUploadStatus == UPLOAD_SUCCESS) {
-      startFileUpload(userReport);
-    }
-
-    /// si un up à échoué, on réessaie
-    else if (photoVideoUploadStatus == UPLOAD_FAIL) {
-      startFileUpload(userReport);
-    }
-  }
-
-  startFileUpload(Report userReport) async {
-    setState(() {
-      photoVideoUploadStatus = UPLOAD_IN_PROGRESS;
-
-      /// on lance un upload de fichier
-      fileUploader.uploadFile(
-        _photoVideoFile,
-        onUploadProgress,
-        (reqData, reqCode) {
-          onFileUploadDone(reqData, reqCode, userReport);
-        },
-      );
-    });
-  }
-
   /// les icones de l'inventaire
-  List<Widget> inventaireIcons(Report userReport) {
+  List<Widget> inventaireIcons(Report userReport, BuildContext context) {
     return [
-      addItemIcon(userReport),
+      addItemIcon(userReport, context),
     ];
   }
 
@@ -1226,14 +1178,14 @@ class _StepCreationState extends State<StepCreation>
 
   // l'icone nous permettant d'ajouter
   /// un item dans notre inventaire
-  Widget addItemIcon(Report userReport) {
+  Widget addItemIcon(Report userReport, BuildContext context) {
     return IconButton(
       icon: Icon(
         Icons.add,
         size: BOTTOM_ICON_SIZE,
       ),
       onPressed: () {
-        addItemActions(userReport);
+        addItemActions(userReport, context);
       },
       color: Colors.blue,
     );
@@ -1241,9 +1193,9 @@ class _StepCreationState extends State<StepCreation>
 
   /// que faire quand on veut ajouter un
   /// item dans notre liste d'items
-  void addItemActions(Report userReport) {
+  void addItemActions(Report userReport, BuildContext context) {
     /// obtient le nom de l'objet
-    Future<String> itemName = getItemName();
+    Future<String> itemName = getItemName(context);
 
     /// une fois obtenu on veut faire les
     /// choses suivantes..
@@ -1279,11 +1231,13 @@ class _StepCreationState extends State<StepCreation>
 
   // l'icone nous permettant de prendre
   // une photo avec l'appareil photo
-  Widget photoCameraIcon(int whatCapture) {
+  Widget photoCameraIcon(int whatCapture, BuildContext context) {
     Function actions;
 
     if (whatCapture == PHOTO_AND_VIDEO) {
-      actions = recordPhotoVideo;
+      actions = () {
+        recordPhotoVideo(context);
+      };
     } else if (whatCapture == PHOTO_ONLY) {
       actions = recordPhoto;
     } else if (whatCapture == VIDEO_ONLY) {
@@ -1300,7 +1254,7 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  recordPhotoVideo() {
+  recordPhotoVideo(BuildContext context) {
     Future<Choice> userChoice = getUserChoice(
       context,
       "Veux tu prendre une photo, ou une vidéo ?",
@@ -1327,11 +1281,13 @@ class _StepCreationState extends State<StepCreation>
 
   // l'icone nous permettant de prendre
   // une photo dans la mémoire du téléphone
-  Widget photoLibraryIcon(int whatCapture) {
+  Widget photoLibraryIcon(int whatCapture, BuildContext context) {
     Function actions;
 
     if (whatCapture == PHOTO_AND_VIDEO) {
-      actions = localPhotoVideo;
+      actions = () {
+        localPhotoVideo(context);
+      };
     } else if (whatCapture == PHOTO_ONLY) {
       actions = getLocalPhoto;
     } else if (whatCapture == VIDEO_ONLY) {
@@ -1348,7 +1304,7 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  localPhotoVideo() {
+  localPhotoVideo(BuildContext context) {
     Future<Choice> userChoice = getUserChoice(
       context,
       "Veux tu prendre une photo, ou une vidéo ?",
@@ -1455,7 +1411,7 @@ class _StepCreationState extends State<StepCreation>
 
         // la barre d'icones en bas de l'écran
         // (photo, microphone, text, etc...)
-        bottomNavigationBar: getBottomBar(userReport),
+        bottomNavigationBar: getBottomBar(userReport, context),
 
         // la zone contenant photo, texte, émojis, etc...
         body: panel,
@@ -1464,7 +1420,7 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /// obtient un string de l'user
-  Future<String> getItemName() {
+  Future<String> getItemName(BuildContext context) {
     String title = "Comment s'appelle l'objet ?";
     String subtitle = "Nom de l'objet";
     String hint = "Un tournevis...";
@@ -1690,66 +1646,6 @@ class _StepCreationState extends State<StepCreation>
     userReport.save();
   }
 
-  afterPhotoUploaded(String newFilePath, String fileUrl, Report userReport) {
-    /// if there's an existing photo path,
-    /// delete the photo at that path in firebase,
-    /// and store the new path,
-    ///
-    /// otherwise just store the new path
-    storeNewPhotoFilePath(newFilePath, fileUrl, userReport);
-
-    /// save the data
-    //userReport.save();
-
-    /// reset button so we
-    /// can upload a new photo
-    /*setState(() {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  _createUpload = DONT_CREATE_UP;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                });*/
-  }
-
-  /// if there's an existing photo path,
-  /// delete the photo at that path in firebase,
-  /// and store the new path,
-  ///
-  /// otherwise just store the new path
-  Future<void> storeNewPhotoFilePath(
-      String newfilePath, String fileUrl, Report userReport) async {
-    var oldfilePath = userReport
-        .getLatestBabyLessonSeen()
-        .getCurrentStep()
-        .photoVideoFilePath;
-
-    if (oldfilePath == NO_PHOTO_PATH) {
-      storePhotoVideoPath(newfilePath, fileUrl, userReport);
-    } else if (oldfilePath.length > 0) {
-      await deleteFile(oldfilePath);
-      storePhotoVideoPath(newfilePath, fileUrl, userReport);
-    } else {
-      throw Error();
-    }
-  }
-
-  /// if there's an existing photo path,
-  /// delete the photo at that path in firebase,
-  /// and store the new path,
-  ///
-  /// otherwise just store the new path
-  Future<void> storeNewAudioFilePath(
-      String newfilePath, String fileUrl, Report userReport) async {
-    var oldfilePath =
-        userReport.getLatestBabyLessonSeen().getCurrentStep().audioFilePath;
-
-    if (oldfilePath == NO_PHOTO_PATH) {
-      storeAudioPath(newfilePath, fileUrl, userReport);
-    } else if (oldfilePath.length > 0) {
-      await deleteFile(oldfilePath);
-      storeAudioPath(newfilePath, fileUrl, userReport);
-    } else {
-      throw Error();
-    }
-  }
-
   void storePhotoVideoPath(
       String newfilePath, String fileUrl, Report userReport) {
     /// get the current step data
@@ -1779,43 +1675,39 @@ class _StepCreationState extends State<StepCreation>
     userReport.save();
   }
 
-  /// supprime la photo stockée dans firebase storage
-  deleteFile(String oldfilePath) async {
-    await _storage.ref().child(oldfilePath).delete();
-  }
-
   void resetState(int indexEtape) {
     print("reset step state to beginning");
 
     setState(() {
-      _photoVideoFile = NO_PHOTO;
+      _photoVideoFile = NO_DATA;
+      _fileType = NO_DATA;
       _photoSize = NORMAL_SIZE;
       sousEtape = indexEtape;
       _isRecording = NO_RECORD;
       _recording = NO_AUDIO_FILE;
       _playerState = STOPPED;
+      audioPlayer.stop();
     });
   }
 
-  String recordingPathOrUrl(Report userReport) {
-    if (_recording != NO_AUDIO_FILE) {
-      return recordingPath();
+  String recordingPathOrUrl(File recording, String audioUrl, String audioPath) {
+    if (recording != NO_DATA) {
+      return recording.path;
+    } else if (audioUrl != NO_DATA) {
+      return audioUrl;
+    } else if (audioPath != NO_DATA) {
+      return audioPath;
     } else {
-      return audioUrl(userReport);
+      throw Error();
     }
   }
 
-  localOrNot(Report userReport) {
-    if (_recording != NO_AUDIO_FILE) {
+  localOrNot(Report userReport, String audioPath) {
+    if (_recording != NO_DATA || audioPath != NO_DATA) {
       return true;
     } else {
       return false;
     }
-  }
-
-  String recordingPath() {
-    print("recording path: " + _recording.path);
-    return _recording.path;
   }
 
   String audioUrl(Report userReport) {
@@ -1845,19 +1737,58 @@ class _StepCreationState extends State<StepCreation>
     var bblesson = userReport.getLatestBabyLessonSeen();
     bblesson.currentStep = choice.choiceValue;
 
+    resetState(PRENDRE_PHOTO_VIDEO);
+
     userReport.save();
   }
 
+  /// quand on appuie sur la poubelle,
+  /// on veut supprimer l'étape en cours de création
+  /// ainsi que le contenu multimédia associé
   Future<void> supprimeEtapeActions(
       Report userReport, BuildContext context) async {
-    var babyLessonFaible = userReport.latestBabyLessonSeen;
-    userReport.latestBabyLessonSeen--;
+    /// les étapes de la lecon
+    /// et l'index de l'étape a supprimer
+    var babyLesson = userReport.getLatestBabyLessonSeen();
+    var steps = babyLesson.steps;
+    var currentStep = babyLesson.currentStep;
 
-    await deleteLesson(userReport, babyLessonFaible);
+    /// combien d'étapes existe t'il ?
+    var qtySteps = steps.length;
 
-    displaySnackbar(_scaffoldKey, "Bébé leçon supprimé.", 2500);
+    /// si il y a plus d'une étape
+    /// on supprime l'etape actuelle
+    if (qtySteps > 1) {
+      /// supprime le contenu photo/video/audio
+      /// local de l'étape
+      var step = babyLesson.getCurrentStep();
+      var photoVideoPath = step.photoVideoFilePath;
+      var audioPath = step.audioFilePath;
+      deleteLocalFile(photoVideoPath);
+      deleteLocalFile(audioPath);
 
-    Navigator.of(context).pop();
+      /// supprime l'étape
+      steps.removeAt(currentStep);
+
+      /// l'étape actuelle est la toute dernière étape
+      babyLesson.currentStep = steps.length - 1;
+
+      resetState(PRENDRE_PHOTO_VIDEO);
+
+      userReport.save();
+
+      displaySnackbar(_scaffoldKey, "Etape supprimée !", 2500);
+    }
+
+    /// sinon on indique a l'user qu'il peut supprimer
+    /// cette leçon en la swipant
+    else {
+      displaySnackbar(
+        _scaffoldKey,
+        "Pour supprimer le bébé leçon, swipe le horizontalement dans le menu de bébé leçons",
+        3500,
+      );
+    }
   }
 
   void remetAZeroEtapeActions(Report userReport) {
@@ -1870,9 +1801,25 @@ class _StepCreationState extends State<StepCreation>
 
   void etapSuivChoice(Report userReport) {
     var lesson = userReport.getLatestBabyLessonSeen();
+    var steps = lesson.steps;
+    var qtySteps = steps.length;
+    var currentStep = lesson.currentStep;
+    var lastStepIndex = qtySteps - 1;
+
+    /// si nous sommes a la derniére étape de la liste d'étapes
+    /// on ajoute une nouvelle étape
+    if (currentStep == lastStepIndex) {
+      /// ajoute l'étape à la fin de la liste d'étapes
+      steps.add(new LessonStep());
+    } else {
+      /// on ajoute l'étape right after l'étape actuelle
+      var index = currentStep + 1;
+
+      /// on veut ajouter notre item aprés l'item actuel
+      steps.insert(index, new LessonStep());
+    }
 
     lesson.currentStep++;
-    lesson.steps.add(new LessonStep());
 
     userReport.save();
 
@@ -1881,121 +1828,6 @@ class _StepCreationState extends State<StepCreation>
 
   void finLeconChoice(Report userReport) {
     resetState(PREND_THUMBNAIL_PHOTO);
-  }
-
-  Widget finLeconPanel(Report userReport) {
-    return null;
-  }
-
-  Widget prendThumbnailPanel(Report userReport) {
-    return RepaintBoundary(
-      key: _canvasKey,
-      child: PhotoVideoCanvas(
-        file: _photoVideoFile,
-        fileType: _fileType,
-        photoSize: _photoSize,
-        noFileText:
-            "Appuie sur l'appareil photo pour prendre une photo d'identité de ton projet.  😎",
-        fileUrl: NO_DATA,
-      ),
-    );
-  }
-
-  Widget completeInventoryPanel(Report userReport) {
-    return inventairePanel(userReport);
-  }
-
-  List<Widget> thumbnailIcons(Report userReport) {
-    return [
-      photoCameraIcon(PHOTO_ONLY),
-      photoLibraryIcon(PHOTO_ONLY),
-      photoSizeIcon(),
-    ];
-  }
-
-  List<Widget> completeInventaireIcons(Report userReport) {
-    return inventaireIcons(userReport);
-  }
-
-  Widget uploadThumbPanel(Report userReport) {
-    return Uploader(
-      files: [_photoVideoFile],
-      userReport: userReport,
-      uploadMsgs: [
-        "Upload de photo thumbnail en cours...",
-      ],
-      onUploadsDone: [afterThumbPhotoUploaded],
-    );
-  }
-
-  List<Widget> uploadThumbIcons(Report userReport) {
-    return [];
-  }
-
-  afterThumbPhotoUploaded(
-      String newFilePath, String fileUrl, Report userReport) {
-    /// sauvegarde paths thumbnail, sets baby lesson as mature,
-    /// and store the baby lesson among lessons
-    saveLesson(newFilePath, fileUrl, userReport);
-
-    Navigator.of(context).pop();
-  }
-
-  Future<void> saveLesson(
-      String newfilePath, String fileUrl, Report userReport) async {
-    /// get the baby lesson to become adult
-    var babyLesson = userReport.getLatestBabyLessonSeen();
-    var oldfilePath = babyLesson.thumbnailPath;
-
-    /// si il existe une thumbnail existante, supprime la
-    if (oldfilePath != NO_DATA) {
-      await deleteFile(oldfilePath);
-    }
-
-    /// store new paths
-    storeThumbPaths(babyLesson, newfilePath, fileUrl);
-
-    /// the lesson is ready to be displayed in the Lecons panel
-    makeLessonMature(babyLesson);
-
-    /// save the url of the user google icon
-    saveUserIconUrl(babyLesson);
-
-    print(userReport.toString());
-
-    /// save data
-    userReport.save();
-  }
-
-  void makeLessonMature(BabyLesson babyLesson) {
-    babyLesson.isMature = MATURE;
-  }
-
-  void storeThumbPaths(
-      BabyLesson babyLesson, String newfilePath, String fileUrl) {
-    babyLesson.thumbnailPath = newfilePath;
-    babyLesson.thumbnailUrl = fileUrl;
-  }
-
-  void saveUserIconUrl(BabyLesson babyLesson) {
-    var user = Provider.of<FirebaseUser>(context);
-
-    babyLesson.userIconUrl = user.photoUrl;
-  }
-
-  incrementIfThumbPhotoTaken() {
-    if (_photoVideoFile == NO_PHOTO) {
-      takeAThumbPlz();
-    } else {
-      incrementSubstep();
-    }
-  }
-
-  void takeAThumbPlz() {
-    displaySnackbar(
-        _scaffoldKey,
-        "Prend une photo représentant ta leçon, ou le produit final, stp...",
-        2500);
   }
 
   void noFileChoice() {
@@ -2027,13 +1859,10 @@ class _StepCreationState extends State<StepCreation>
   }
 
   Widget upInProgress() {
-    var mbSent = filesize(_sent); 
-    var mbTotal = filesize(_total);
-
     return centeredMsg(
       "assets/icon.png",
-      "Upload en cours...\n" + "$mbSent / $mbTotal",
-      Colors.purpleAccent,
+      "Upload en cours...",
+      Colors.pink,
     );
   }
 
@@ -2058,42 +1887,122 @@ class _StepCreationState extends State<StepCreation>
         _scaffoldKey, "Un upload de fichier est déja en cours.", 2500);
   }
 
-  onUploadProgress(int sent, int total) {
-    setState(() {
-      _sent = sent;
-      _total = total;
-
-      print("bytes envoyé: $sent");
-      print("total bytes: $total");
-    });
+  horizontalUploadProgress(double progressPercent) {
+    return Padding(
+      padding: const EdgeInsets.all(15.0),
+      child: LinearProgressIndicator(value: progressPercent),
+    );
   }
 
-  /// que faire quand la requete d'upload renvoie une réponse ?
-  void onFileUploadDone(Map reqData, int reqCode, Report userReport) {
-    /// si le fichier à été uploadé avec succès
-    /// on veut sauvegarder l'url du fichier
-    /// photo/video de l'étape en cours
-    if (reqCode == REQUEST_SUCCESSFUL) {
-      var etapeEnCours = userReport.getLatestBabyLessonSeen().getCurrentStep();
-      var urlPhotoVideo = reqData['url'];
-      var publicId = reqData['public_id'];
+  /// sauvegarde le fichier photo/vidéo pris
+  /// et supprime le fichier précént, si il existe
+  savePhotoVideo(File photoVideoFile, int fileType, Report userReport) async {
+    if (photoVideoFile != NO_DATA) {
+      /// l'étape actuelle
+      LessonStep currentStep =
+          userReport.getLatestBabyLessonSeen().getCurrentStep();
 
-      etapeEnCours.fileType = _fileType;
-      etapeEnCours.photoVideoFileUrl = urlPhotoVideo;
-      etapeEnCours.publicId = publicId;
+      /// le path de la photo/vidéo déja existante.
+      String photoVideoPath = currentStep.photoVideoFilePath;
 
+      /// si un fichier déja existant, on le supprime
+      bool oldFileExisted = deleteLocalFile(photoVideoPath);
+
+      /// on sauvegarde le nouveau fichier photo/video
+      String newPhotoVideoPath = await saveLocalFile(photoVideoFile);
+
+      print("old photo video path: $photoVideoPath");
+      print("old photo video existed: $oldFileExisted");
+      print("new photo video path: $newPhotoVideoPath");
+
+      /// on stocke des infos relatives à ce fichier, necessaire
+      /// pour l'afficher plus tard
+      currentStep.photoVideoFilePath = newPhotoVideoPath;
+      currentStep.fileType = fileType;
+
+      /// sauvegarde ces infos
       userReport.save();
+    }
+  }
 
-      /// indique succès
-      setState(() {
-        photoVideoUploadStatus = UPLOAD_SUCCESS;
-      });
+  /// sauvegarde le path du fichier audio local
+  /// et supprime le fichier précént, si il existe
+  saveAudioPath(File recording, Report userReport) async {
+    if (recording != NO_DATA) {
+      /// l'étape actuelle
+      LessonStep currentStep =
+          userReport.getLatestBabyLessonSeen().getCurrentStep();
+
+      /// le path de l'audio déja existante.
+      String audioPath = currentStep.audioFilePath;
+
+      /// si un fichier déja existant, on le supprime
+      bool oldFileExisted = deleteLocalFile(audioPath);
+
+      /// le path du fichier audio enregistré localement par AudioRecorder
+      var newAudioPath = recording.path;
+
+      print("old audio path: $audioPath");
+      print("old audio existed: $oldFileExisted");
+      print("new audio path: $newAudioPath");
+
+      /// on stocke des infos relatives à ce fichier, necessaire
+      /// pour l'afficher plus tard
+      currentStep.audioFilePath = newAudioPath;
+
+      /// sauvegarde ces infos
+      userReport.save();
     }
-    /// sinon indique echec
-    else {
-      setState(() {
-        photoVideoUploadStatus = UPLOAD_FAIL;
-      });
+  }
+
+  /// supprime un fichier local
+  ///
+  /// return un bool représentant si oui ou non il y a un filePath
+  bool deleteLocalFile(String filePath) {
+    /// si il existe un fichier
+    if (filePath != NO_DATA) {
+      File(filePath).delete(recursive: true);
+      return true;
+    } else {
+      return false;
     }
+  }
+
+  /// sauvegarde un fichier localement
+  Future<String> saveLocalFile(File file) async {
+    var filePath;
+    String localfilePath = await getExternalStorageFilePath(file);
+
+    // copy the file to a new path
+    File newLocalImage = await file.copy(localfilePath);
+
+    filePath = newLocalImage.path;
+
+    return filePath;
+  }
+
+  /// obtient le path d'un fichier multimédia pour notre appli
+  Future<String> getExternalStorageFilePath(File file, [String ext]) async {
+    String extStorDir = await getExternalStorageDirectoryStr();
+
+    var now = DateTime.now().millisecondsSinceEpoch;
+
+    if (ext == NO_DATA) {
+      ext = extension(file.path);
+    }
+
+    var localfilePath = '$extStorDir/$now$ext';
+
+    return localfilePath;
+  }
+
+  Future<String> getExternalStorageDirectoryStr() async {
+    var path;
+
+    await getExternalStorageDirectory().then((extDir) {
+      path = extDir.path;
+    });
+
+    return path;
   }
 }
