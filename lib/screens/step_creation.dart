@@ -35,19 +35,13 @@
 /// - implémente l'upload du contenu et la finalisation de la leçon
 import 'dart:io';
 import 'dart:ui';
-import 'package:audio_recorder/audio_recorder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:quizapp/parts/cloudinary_api.dart';
 import 'package:quizapp/parts/parts.dart';
 import 'package:quizapp/services/services.dart';
 import 'package:quizapp/shared/photo_canvas.dart';
 import 'package:file/local.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart';
 
 import '../parts/consts.dart';
 import '../parts/parts.dart';
@@ -66,10 +60,6 @@ class _StepCreationState extends State<StepCreation>
     with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
-    /// l'event qui remet a zero le state du player
-    /// lorsque un fichier audio vient d'etre joué jusqu'a la fin
-    setCompletionEvent();
-
     return StreamBuilder<Report>(
       stream: Global.reportRef
           .documentStream, // a previously-obtained Future<String> or null
@@ -117,8 +107,18 @@ class _StepCreationState extends State<StepCreation>
   /// nous permet de sauvegarder la zone photo
   final _canvasKey = GlobalKey();
 
-  /// nous permet d'uploader nos fichiers
-  final fileUploader = FileUploader();
+  /// le liseur de fichier audio
+  SoundPlayer audioPlayer;
+
+  /// l'enregistreur via microphone
+  SoundRecorder audioRecorder;
+
+  /// permet de prendre photo / vidéo
+  PhotoVideoRecorder photoVideoRecorder;
+
+  /// permet de sauvegarder localement / supprimer / télécharger
+  /// des fichiers (File)
+  FileManager fileManager;
 
   /// convertit le temps restant
   /// de l'enregistrement audio (Duration) en cours,
@@ -133,7 +133,27 @@ class _StepCreationState extends State<StepCreation>
   void initState() {
     super.initState();
 
-    controller = AnimationController(
+    controller = initAnimationController();
+
+    audioPlayer = new SoundPlayer();
+
+    /// nous permet d'update le state
+    /// lorsque un fichier audio est completé
+    audioPlayer.setOnComplete(() {
+      setState(() {
+        _playerState = STOPPED;
+      });
+    });
+
+    audioRecorder = new SoundRecorder();
+
+    photoVideoRecorder = new PhotoVideoRecorder();
+
+    fileManager = new FileManager();
+  }
+
+  AnimationController initAnimationController() {
+    return AnimationController(
       vsync: this,
       duration: Duration(seconds: DUREE_MSG_AUDIO),
     );
@@ -144,8 +164,7 @@ class _StepCreationState extends State<StepCreation>
     print('allez hop on ferme boutique.');
 
     controller.dispose();
-    audioPlayer.stop();
-    fileUploader.close();
+    audioPlayer.stop(() {});
 
     super.dispose();
   }
@@ -248,16 +267,10 @@ class _StepCreationState extends State<StepCreation>
 
   */
 
-  /// RECORDING représente le message audio
-  ///
-  /// null pour NO_DATA
-  /// File autrement
-  File _recording = NO_DATA;
-
   /*
   
   void ...() {
-    if (_recording == NO_AUDIO_FILE) {
+    if (_audioPath == NO_AUDIO_FILE) {
       return ...();
     }
 
@@ -267,9 +280,6 @@ class _StepCreationState extends State<StepCreation>
   }
 
   */
-
-  /// le lecteur audio
-  AudioPlayer audioPlayer = AudioPlayer();
 
   /// PLAYER_STATE représente l'état du player audio
   ///
@@ -316,16 +326,6 @@ class _StepCreationState extends State<StepCreation>
     }
   }
   */
-
-  /// l'event qui remet a zero le state du player
-  /// lorsque un fichier audio vient d'etre joué jusqu'a la fin
-  void setCompletionEvent() {
-    audioPlayer.onPlayerCompletion.listen((event) {
-      setState(() {
-        _playerState = STOPPED;
-      });
-    });
-  }
 
   /// quel contenu doit on afficher entre la top bar et
   /// la bottom bar
@@ -387,7 +387,7 @@ class _StepCreationState extends State<StepCreation>
 
   /// quel instructions donner a l'user durant étape audio
   String noRecordingMsg() {
-    if (_recording == NO_DATA) {
+    if (audioRecorder.audioPath == NO_DATA) {
       return "Appuie sur le micro pour enregistrer un message audio.";
     } else {
       return "Appuie sur l'icone play pour écouter le message audio.";
@@ -462,7 +462,11 @@ class _StepCreationState extends State<StepCreation>
   /// arrete l'enregistrement audio en cours
   void endAnim() {
     if (_isRecording) {
-      stopRecordActions();
+      audioRecorder.stopRecording(() {
+        setState(() {
+          _isRecording = NO_RECORD;
+        });
+      });
     }
   }
 
@@ -694,9 +698,9 @@ class _StepCreationState extends State<StepCreation>
       if (choice == NO_FUTURE_CHOICE) {
         noStepChoice(choice);
       } else if (choice.choiceValue == SUPPRIME_ETAPE) {
-        await supprimeEtapeActions(userReport, context);
+        ///await supprimeEtapeActions(userReport, context);
       } else if (choice.choiceValue == REMET_A_ZERO_ETAPE) {
-        remetAZeroEtapeActions(userReport);
+        resetState(PRENDRE_PHOTO_VIDEO);
       } else {
         throw Error();
       }
@@ -708,10 +712,10 @@ class _StepCreationState extends State<StepCreation>
   Future<void> nextButtonAction(Report userReport, BuildContext context) async {
     if (sousEtape < lastStep) {
       if (sousEtape == PRENDRE_PHOTO_VIDEO) {
-        savePhotoVideo(_photoVideoFile, _fileType, userReport);
+        ///savePhotoVideo(_photoVideoFile, _fileType, userReport);
         incrementSubstep();
       } else if (sousEtape == MSG_AUDIO) {
-        saveAudioPath(_recording, userReport);
+        ///saveAudioPath(_audioPath, userReport);
         incrementSubstep();
       } else if (sousEtape == INVENTAIRE) {
         nextStepOrLessonOver(userReport, context);
@@ -755,38 +759,6 @@ class _StepCreationState extends State<StepCreation>
 
     int durationMsec = 7000;
     displaySnackbar(_scaffoldKey, msg, durationMsec);
-  }
-
-  uglifyPhotoFile() async {
-    RenderRepaintBoundary boundary =
-        _canvasKey.currentContext.findRenderObject();
-
-    /// convertit image canvas en list de bytes png
-    var image = await boundary.toImage();
-    var byteData = await image.toByteData(format: ImageByteFormat.png);
-    var pngBytes = byteData.buffer.asUint8List();
-
-    /// ceci est un path unique pour une photo d'étape modifiée
-    var tempDir = (await getTemporaryDirectory()).path;
-    var fullImgPath = '$tempDir/photo_canvas.png';
-
-    /// supprime photo préexistante au cas ou
-    var fileExists = await File(fullImgPath).exists();
-
-    if (fileExists) {
-      await File(fullImgPath).delete();
-    }
-
-    /// sauvegarde list bytes png
-    /// dans le File situé au path unique
-    var imgFile = new File(fullImgPath);
-    imgFile.writeAsBytes(pngBytes);
-
-    /// sauvegarde cette nouvelle photo
-    /// et vide panier de texte et emoji
-    setState(() {
-      _photoVideoFile = imgFile;
-    });
   }
 
   void incrementSubstep() {
@@ -835,7 +807,7 @@ class _StepCreationState extends State<StepCreation>
   /// les icones de la sous étape en cours
   List<Widget> substepIcons(Report userReport, BuildContext context) {
     if (sousEtape == PRENDRE_PHOTO_VIDEO) {
-      return prendrePhotoIcons(context);
+      return prendrePhotoIcons(userReport, context);
     } else if (sousEtape == MSG_AUDIO) {
       return msgAudioIcons(userReport);
     } else if (sousEtape == UPLOAD_FILES) {
@@ -848,10 +820,10 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /// les icones de l'étape photo
-  List<Widget> prendrePhotoIcons(BuildContext context) {
+  List<Widget> prendrePhotoIcons(Report userReport, BuildContext context) {
     return [
-      photoCameraIcon(PHOTO_AND_VIDEO, context),
-      photoLibraryIcon(PHOTO_AND_VIDEO, context),
+      photoCameraIcon(userReport, PHOTO_AND_VIDEO, context),
+      photoLibraryIcon(userReport, PHOTO_AND_VIDEO, context),
       photoSizeIcon(),
     ];
   }
@@ -898,9 +870,9 @@ class _StepCreationState extends State<StepCreation>
   }
 
   Future<void> restartAudioActions(Report userReport) async {
-    await audioPlayer.stop();
+    /*await audioPlayer.stop();
 
-    playIconActions(userReport);
+    playIconActions(userReport);*/
   }
 
   /// l'icone qui joue/pause un enregistrement audio
@@ -956,40 +928,43 @@ class _StepCreationState extends State<StepCreation>
 
   /// les actions a effectuer pour play/pause/resume
   void pauseIconActions() async {
-    await audioPlayer.pause();
+    /*await audioPlayer.pause();
 
     setState(() {
       _playerState = PAUSED;
-    });
+    });*/
   }
 
   ///
   void playIconActions(Report userReport) async {
-    var currentStep = userReport.getLatestBabyLessonSeen().getCurrentStep();
+    /*var currentStep = userReport.getLatestBabyLessonSeen().getCurrentStep();
     var audioUrl = currentStep.audioFileUrl;
     var audioPath = currentStep.audioFilePath;
     File file;
 
     print("play: $audioPath");
 
-    if (audioUrl != NO_DATA || audioPath != NO_DATA || _recording != NO_DATA) {
+    if (audioUrl != NO_DATA || 
+        audioPath != NO_DATA || 
+        _audioPath != NO_DATA) {
       await audioPlayer.play(
-        recordingPathOrUrl(_recording, audioUrl, audioPath),
+        recordingPathOrUrl(_audioPath, audioUrl, audioPath),
         isLocal: localOrNot(userReport, audioPath),
       );
 
       setState(() {
         _playerState = PLAYING;
       });
-    }
+      
+    }*/
   }
 
   void resumeIconActions() async {
-    await audioPlayer.resume();
+    /*await audioPlayer.resume();
 
     setState(() {
       _playerState = PLAYING;
-    });
+    });*/
   }
 
   /// la durée de l'enregistrement audio en cours
@@ -1032,7 +1007,9 @@ class _StepCreationState extends State<StepCreation>
         Icons.mic,
         size: BOTTOM_ICON_SIZE,
       ),
-      onPressed: letsRecordActions,
+      onPressed: () {
+        //letsRecordActions();
+      },
       color: Colors.blue,
     );
   }
@@ -1044,11 +1021,14 @@ class _StepCreationState extends State<StepCreation>
         Icons.stop,
         size: BOTTOM_ICON_SIZE,
       ),
-      onPressed: stopRecordActions,
+      onPressed: () {
+        //stopRecordActions(),
+      },
       color: Colors.blue,
     );
   }
 
+  /*
   /// les actions pour demarrer un enregistrement
   void letsRecordActions() async {
     print('coucou');
@@ -1087,7 +1067,9 @@ class _StepCreationState extends State<StepCreation>
       print(e);
     }
   }
+  */
 
+  /*
   /// les actions pour arreter un enregistrement
   Future stopRecordActions() async {
     try {
@@ -1101,7 +1083,7 @@ class _StepCreationState extends State<StepCreation>
 
         /// update le state
         setState(() {
-          _recording = getRecordingFile(recording);
+          _audioPath = getRecordingFile(recording);
           _isRecording = NO_RECORD;
         });
 
@@ -1113,11 +1095,12 @@ class _StepCreationState extends State<StepCreation>
       print(e);
     }
   }
+  */
 
-  File getRecordingFile(Recording recording) {
+  /*File getRecordingFile(Recording recording) {
     File file = widget.localFileSystem.file(recording.path);
     return file;
-  }
+  }*/
 
   List<Widget> uploadFilesIcons(Report userReport) {
     return [
@@ -1144,9 +1127,10 @@ class _StepCreationState extends State<StepCreation>
     ];
   }
 
+
   /// Select an image via gallery or camera
-  Future<void> _pickImage(ImageSource source) async {
-    try {
+  Future<void> _pickImage(/*ImageSource source*/) async {
+    /*try {
       File selected = await ImagePicker.pickImage(source: source);
 
       if (selected != null) {
@@ -1157,12 +1141,12 @@ class _StepCreationState extends State<StepCreation>
       }
     } catch (e) {
       print(e);
-    }
+    }*/
   }
 
   /// Select an vidéo via gallery or camera
-  Future<void> _pickVideo(ImageSource source) async {
-    try {
+  Future<void> _pickVideo(/*ImageSource source*/) async {
+    /*try {
       File selected = await ImagePicker.pickVideo(source: source);
 
       if (selected != null) {
@@ -1173,7 +1157,7 @@ class _StepCreationState extends State<StepCreation>
       }
     } catch (e) {
       print(e);
-    }
+    }*/
   }
 
   // l'icone nous permettant d'ajouter
@@ -1231,17 +1215,21 @@ class _StepCreationState extends State<StepCreation>
 
   // l'icone nous permettant de prendre
   // une photo avec l'appareil photo
-  Widget photoCameraIcon(int whatCapture, BuildContext context) {
+  Widget photoCameraIcon(Report userReport, int whatCapture, BuildContext context) {
     Function actions;
 
     if (whatCapture == PHOTO_AND_VIDEO) {
       actions = () {
-        recordPhotoVideo(context);
+        recordPhotoVideo(userReport, context);
       };
     } else if (whatCapture == PHOTO_ONLY) {
-      actions = recordPhoto;
+      actions = () {
+        recordAndSavePhoto(userReport);
+      };
     } else if (whatCapture == VIDEO_ONLY) {
-      actions = recordVideo;
+      actions = () {
+        recordAndSaveVideo(userReport);
+      };
     }
 
     return IconButton(
@@ -1254,7 +1242,7 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  recordPhotoVideo(BuildContext context) {
+  recordPhotoVideo(Report userReport, BuildContext context) {
     Future<Choice> userChoice = getUserChoice(
       context,
       "Veux tu prendre une photo, ou une vidéo ?",
@@ -1264,34 +1252,38 @@ class _StepCreationState extends State<StepCreation>
       ],
     );
 
-    fnForRecordChoice(userChoice);
+    fnForRecordChoice(userReport, userChoice);
   }
 
-  void fnForRecordChoice(Future<Choice> futureChoice) {
+  void fnForRecordChoice(Report userReport, Future<Choice> futureChoice) {
     futureChoice.then((choice) {
       if (choice == NO_FUTURE_CHOICE) {
-        return noFileChoice();
+        noFileChoice();
       } else if (choice.choiceValue == PHOTO_FILE) {
-        return recordPhoto();
+        recordAndSavePhoto(userReport);
       } else if (choice.choiceValue == VIDEO_FILE) {
-        return recordVideo();
+        recordAndSaveVideo(userReport);
       }
     });
   }
 
   // l'icone nous permettant de prendre
   // une photo dans la mémoire du téléphone
-  Widget photoLibraryIcon(int whatCapture, BuildContext context) {
+  Widget photoLibraryIcon(Report userReport, int whatCapture, BuildContext context) {
     Function actions;
 
     if (whatCapture == PHOTO_AND_VIDEO) {
       actions = () {
-        localPhotoVideo(context);
+        localPhotoVideo(userReport, context);
       };
     } else if (whatCapture == PHOTO_ONLY) {
-      actions = getLocalPhoto;
+      actions = () {
+        getLocalPhoto(userReport);
+      };
     } else if (whatCapture == VIDEO_ONLY) {
-      actions = getLocalVideo;
+      actions = () {
+        getLocalVideo(userReport);
+      };
     }
 
     return IconButton(
@@ -1304,7 +1296,7 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  localPhotoVideo(BuildContext context) {
+  localPhotoVideo(Report userReport, BuildContext context) {
     Future<Choice> userChoice = getUserChoice(
       context,
       "Veux tu prendre une photo, ou une vidéo ?",
@@ -1314,17 +1306,17 @@ class _StepCreationState extends State<StepCreation>
       ],
     );
 
-    fnForLocalFileChoice(userChoice);
+    fnForLocalFileChoice(userReport, userChoice);
   }
 
-  void fnForLocalFileChoice(Future<Choice> futureChoice) {
+  void fnForLocalFileChoice(Report userReport, Future<Choice> futureChoice) {
     futureChoice.then((choice) {
       if (choice == NO_FUTURE_CHOICE) {
         return noFileChoice();
       } else if (choice.choiceValue == PHOTO_FILE) {
-        return getLocalPhoto();
+        return getLocalPhoto(userReport);
       } else if (choice.choiceValue == VIDEO_FILE) {
-        return getLocalVideo();
+        return getLocalVideo(userReport);
       }
     });
   }
@@ -1399,7 +1391,7 @@ class _StepCreationState extends State<StepCreation>
   Widget wholeScreen(BuildContext context, Report userReport, Widget panel) {
     return WillPopScope(
       onWillPop: () async {
-        await stopRecordActions();
+        //await stopRecordActions();
 
         return true;
       },
@@ -1684,9 +1676,9 @@ class _StepCreationState extends State<StepCreation>
       _photoSize = NORMAL_SIZE;
       sousEtape = indexEtape;
       _isRecording = NO_RECORD;
-      _recording = NO_AUDIO_FILE;
+      audioRecorder.audioPath = NO_DATA;
       _playerState = STOPPED;
-      audioPlayer.stop();
+      audioPlayer.stop(() {});
     });
   }
 
@@ -1703,7 +1695,7 @@ class _StepCreationState extends State<StepCreation>
   }
 
   localOrNot(Report userReport, String audioPath) {
-    if (_recording != NO_DATA || audioPath != NO_DATA) {
+    if (audioRecorder.audioPath != NO_DATA || audioPath != NO_DATA) {
       return true;
     } else {
       return false;
@@ -1719,11 +1711,11 @@ class _StepCreationState extends State<StepCreation>
   }
 
   bool photoStepComplete() {
-    return _photoVideoFile != NO_PHOTO;
+    return _photoVideoFile != NO_DATA;
   }
 
   bool msgAudioStepComplete() {
-    return _recording != NO_AUDIO_FILE;
+    return audioRecorder.audioPath != NO_DATA;
   }
 
   void noStepChoice(Choice choice) {
@@ -1742,6 +1734,7 @@ class _StepCreationState extends State<StepCreation>
     userReport.save();
   }
 
+  /* 
   /// quand on appuie sur la poubelle,
   /// on veut supprimer l'étape en cours de création
   /// ainsi que le contenu multimédia associé
@@ -1764,8 +1757,9 @@ class _StepCreationState extends State<StepCreation>
       var step = babyLesson.getCurrentStep();
       var photoVideoPath = step.photoVideoFilePath;
       var audioPath = step.audioFilePath;
-      deleteLocalFile(photoVideoPath);
-      deleteLocalFile(audioPath);
+      
+      await deleteLocalFile(photoVideoPath);
+      await deleteLocalFile(audioPath);
 
       /// supprime l'étape
       steps.removeAt(currentStep);
@@ -1773,9 +1767,9 @@ class _StepCreationState extends State<StepCreation>
       /// l'étape actuelle est la toute dernière étape
       babyLesson.currentStep = steps.length - 1;
 
-      resetState(PRENDRE_PHOTO_VIDEO);
-
       userReport.save();
+
+      resetState(PRENDRE_PHOTO_VIDEO);
 
       displaySnackbar(_scaffoldKey, "Etape supprimée !", 2500);
     }
@@ -1789,11 +1783,7 @@ class _StepCreationState extends State<StepCreation>
         3500,
       );
     }
-  }
-
-  void remetAZeroEtapeActions(Report userReport) {
-    resetState(PRENDRE_PHOTO_VIDEO);
-  }
+  }*/
 
   void noOutcomeChoice() {
     displaySnackbar(_scaffoldKey, "On reste ici pour l'instant !", 2500);
@@ -1832,22 +1822,128 @@ class _StepCreationState extends State<StepCreation>
 
   void noFileChoice() {
     displaySnackbar(_scaffoldKey, "On ne prend pas de photo/vidéo.", 2500);
+  } 
+
+  /// Report bool => void
+  /// 
+  /// prend une photo, stocke la dans le state, 
+  /// stocke la dans le dossier 
+  /// local des données de l'appli,
+  /// et sauvegarde le path local de cette photo
+  /// 2nd parametre optionnel, si true, pick from gallery
+  recordAndSavePhoto(Report userReport, [bool pickOnGallery]) async {
+    /// prend une photo,
+    /// stocke la photo dans le state,
+    /// et obtient  cette photo en tant que fichier
+    File photoFile = await photoVideoRecorder.takePhoto((File photo) {
+      setState(() {
+        _photoVideoFile = photo;
+        _fileType = PHOTO_FILE;
+      });
+    }, pickOnGallery);
+
+    /// si une photo a été prise
+    /// on la sauvegarde localement,
+    /// et on sauvegarde les infos relatives a son emplacement
+    /// et type (photo) dans notre base de données
+    if (photoFile != NO_DATA) {
+      /// le path du dossier appli
+      Directory appDir = await getApplicationDocumentsDirectory();
+      String appDirPath = appDir.path;
+
+      /// le path de la photo prise avec ImagePicker
+      String photoFilePath = photoFile.path;
+
+      /// now in milliseconds
+      int nowMillis = DateTime.now().millisecondsSinceEpoch;
+
+      /// sauvegarde la photo prise
+      /// dans le dossier appli,
+      /// et obtient le path
+      String localPhotoPath = await fileManager.saveFile(photoFile, appDirPath, "$nowMillis", () {});
+
+      /// supprime la photo prise par ImagePicker
+      bool deleted = await fileManager.deleteFile(photoFilePath, NO_DATA, () {});
+
+      /// sauvegarde le path 
+      var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
+      step.photoVideoFilePath = localPhotoPath;
+      step.fileType = _fileType;
+      userReport.save();
+
+      print("photo path (image picker): $photoFilePath");
+      print("app folder path: $appDirPath");
+      print("local file path 2nd time: $localPhotoPath");
+      print("deletion boolean: $deleted");
+    }
+    
+
+
   }
 
-  void recordPhoto() {
-    _pickImage(ImageSource.camera);
+  /// Report bool => void
+  /// 
+  /// prend une video, stocke la dans le state, 
+  /// stocke la dans le dossier 
+  /// local des données de l'appli,
+  /// et sauvegarde le path local de cette video
+  /// 2nd parametre optionnel, si true, pick from gallery
+  recordAndSaveVideo(Report userReport, [bool pickFromGallery]) async {
+    /// prend une vidéo,
+    /// stocke la vidéo dans le state,
+    /// et obtient  cette vidéo en tant que fichier
+    File videoFile = await photoVideoRecorder.takeVideo((File video) {
+      setState(() {
+        _photoVideoFile = video;
+        _fileType = VIDEO_FILE;
+      });
+    }, pickFromGallery);
+
+    /// si une vidéo a été prise
+    /// on la sauvegarde localement,
+    /// et on sauvegarde les infos relatives a son emplacement
+    /// et type (video) dans notre base de données
+    if (videoFile != NO_DATA) {
+      /// le path du dossier appli
+      Directory appDir = await getApplicationDocumentsDirectory();
+      String appDirPath = appDir.path;
+
+      /// le path de la photo prise avec ImagePicker
+      String videoFilePath = videoFile.path;
+
+      /// now in milliseconds
+      int nowMillis = DateTime.now().millisecondsSinceEpoch;
+
+      /// sauvegarde la video prise
+      /// dans le dossier appli,
+      /// et obtient le path
+      String localVideoPath = await fileManager.saveFile(videoFile, appDirPath, "$nowMillis", () {});
+
+      /// supprime la vidéo prise par ImagePicker
+      bool deleted = await fileManager.deleteFile(videoFilePath, NO_DATA, () {});
+
+      /// sauvegarde le path 
+      var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
+      step.photoVideoFilePath = localVideoPath;
+      step.fileType = _fileType;
+      userReport.save();
+
+      print("video path (image picker): $videoFilePath");
+      print("app folder path: $appDirPath");
+      print("local file path 2nd time: $localVideoPath");
+      print("deletion boolean: $deleted");
+    }
+    
+
+
   }
 
-  void recordVideo() {
-    _pickVideo(ImageSource.camera);
+  void getLocalPhoto(Report userReport) {
+    recordAndSavePhoto(userReport, true);
   }
 
-  void getLocalPhoto() {
-    _pickImage(ImageSource.gallery);
-  }
-
-  void getLocalVideo() {
-    _pickVideo(ImageSource.gallery);
+  void getLocalVideo(Report userReport) {
+    recordAndSaveVideo(userReport, true);
   }
 
   Widget noFilesUploaded() {
@@ -1887,12 +1983,14 @@ class _StepCreationState extends State<StepCreation>
         _scaffoldKey, "Un upload de fichier est déja en cours.", 2500);
   }
 
+  /*
   horizontalUploadProgress(double progressPercent) {
     return Padding(
       padding: const EdgeInsets.all(15.0),
       child: LinearProgressIndicator(value: progressPercent),
     );
   }
+
 
   /// sauvegarde le fichier photo/vidéo pris
   /// et supprime le fichier précént, si il existe
@@ -1955,19 +2053,20 @@ class _StepCreationState extends State<StepCreation>
     }
   }
 
+ 
   /// supprime un fichier local
   ///
   /// return un bool représentant si oui ou non il y a un filePath
-  bool deleteLocalFile(String filePath) {
+  Future<bool> deleteLocalFile(String filePath) async {
     /// si il existe un fichier
     if (filePath != NO_DATA) {
-      File(filePath).delete(recursive: true);
+      await File(filePath).delete(recursive: true);
       return true;
     } else {
       return false;
     }
   }
-
+  
   /// sauvegarde un fichier localement
   Future<String> saveLocalFile(File file) async {
     var filePath;
@@ -2004,5 +2103,5 @@ class _StepCreationState extends State<StepCreation>
     });
 
     return path;
-  }
+  }*/
 }

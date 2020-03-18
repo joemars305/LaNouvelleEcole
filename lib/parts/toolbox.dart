@@ -1,6 +1,14 @@
+import 'dart:io';
+
+import 'package:audio_recorder/audio_recorder.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:quizapp/parts/parts.dart';
 import 'package:quizapp/services/models.dart';
+import 'package:file/local.dart';
+import 'package:path/path.dart';
 
 /// USER_INPUT_STRING représente
 /// un futur texte provenant
@@ -308,4 +316,319 @@ deleteLesson(Report userReport, int index) async {
 
   // puis on met à jour le Report
   userReport.save();
+}
+
+/// nous permet de jouer des fichiers
+/// audio locaux ou en ligne
+class SoundPlayer {
+  /// le player audio
+  AudioPlayer audioPlayer = AudioPlayer();
+
+  /// String Function => void
+  ///
+  /// lit un fichier audio situé:
+  /// sur le stockage du téléphone,
+  /// via un path
+  Future<void> playLocal(String localPath, Function updateState) async {
+    await audioPlayer.play(
+      localPath,
+      isLocal: true,
+    );
+
+    updateState();
+
+    return NO_DATA;
+  }
+
+  /// String Function => void
+  ///
+  /// lit un fichier audio situé:
+  /// sur internet via une url
+  Future<void> playRemote(String url, Function updateState) async {
+    await audioPlayer.play(
+      url,
+      isLocal: false,
+    );
+
+    updateState();
+
+    return NO_DATA;
+  }
+
+  /// Function => void
+  ///
+  /// pause la lecture d' un fichier audio
+  Future<void> pause(Function updateState) async {
+    await audioPlayer.pause();
+
+    updateState();
+
+    return NO_DATA;
+  }
+
+  /// Function => void
+  ///
+  /// stop la lecture d'un fichier audio
+  Future<void> stop(Function updateState) async {
+    await audioPlayer.stop();
+
+    updateState();
+
+    return NO_DATA;
+  }
+
+  /// Function => void
+  ///
+  ///
+  /// crée un event qui s'execute
+  /// lorsque un fichier audio
+  /// vient d'etre joué jusqu'a la fin
+  /// cette fonction doit etre run 1 seule fois
+  /// (dans initState de votre programme)
+  void setOnComplete(Function updateState) {
+    audioPlayer.onPlayerCompletion.listen((event) {
+      updateState();
+    });
+
+    return NO_DATA;
+  }
+
+  /// Function => void
+  ///
+  /// relance la lecture
+  /// d'un fichier audio
+  /// au début (0 sec)
+  Future<void> restart(Function updateState) async {
+    var startPosition = Duration(milliseconds: 0);
+
+    await pause(() {});
+
+    await audioPlayer.seek(startPosition);
+
+    await resume(() {});
+
+    updateState();
+
+    return NO_DATA;
+  }
+
+  /// Function => void
+  ///
+  /// relance la lecture d'un
+  /// fichier audio mis en pause
+  Future<void> resume(Function updateState) async {
+    await audioPlayer.resume();
+
+    updateState();
+
+    return NO_DATA;
+  }
+}
+
+/// Permet d'enregistrer
+/// de l'audio provenant
+/// du microphone de l'utilisateur,
+class SoundRecorder {
+  String audioPath = NO_DATA;
+
+  /// String Function => void
+  ///
+  /// demarre un enregistrement
+  /// audio via microphone,
+  /// stocké localement a l'adresse localPath
+  Future<void> startRecording(String localPath, Function updateState) async {
+    try {
+      /// demande la permission à l'user de pouvoir
+      /// utiliser son microphone, et son stockage
+      await _requestMicAndStoragePermissions();
+
+      /// si il n'y a pas d'enregistrement en cours
+      if (!await isRecording()) {
+        print("Demarre l'enregistrement audio...");
+
+        /// démarre l'enregistrement audio
+        /// qui est désormais stocké à localPath
+        await AudioRecorder.start(path: localPath);
+
+        updateState();
+      } else {
+        print("Pas de permissions, ou enregistrement audio déja en cours..");
+      }
+    } catch (e) {
+      print("oups: L'erreur suivante à été reçue suite à une tentnt audio: $e");
+      print(e);
+    }
+
+    return NO_DATA;
+  }
+
+  Future isRecording() async => (await AudioRecorder.isRecording);
+
+  _requestMicAndStoragePermissions() {
+    PermissionHandler().requestPermissions([
+      PermissionGroup.microphone,
+      PermissionGroup.storage,
+    ]);
+  }
+
+  /// Function => String
+  ///
+  /// arrete un enregistrement
+  /// audio via microphone,
+  /// et retourne le path ou est situé l'audio
+  Future<String> stopRecording(Function updateState) async {
+    try {
+      /// si nous somme en train d'enregistrer
+      /// un message audio..
+      if (await isRecording()) {
+        /// arrete l'enregistrement audio
+        var recording = await AudioRecorder.stop();
+
+        print("Adresse de l'enregistrement audio: ${recording.path}");
+
+        updateState();
+
+        return recording.path;
+      } else {
+        print("Il n'y a aucun enregistrement à arrêter");
+        return NO_DATA;
+      }
+    } catch (e) {
+      print(e);
+    }
+
+    return NO_DATA;
+  }
+
+  /// .. => ..
+  ///
+  ///
+}
+
+/// nous permet de prendre
+/// une photo / vidéo via:
+///
+/// - la caméra du device
+///
+/// - une url
+///
+class PhotoVideoRecorder {
+  /// Function bool => File/NO_DATA
+  ///
+  /// Prend une photo via la caméra,
+  /// (ou via Gallery si 2nd argument existe && true)
+  /// et retourne le fichier
+  /// 
+  Future<File> takePhoto(Function updateState, [bool pickFromGallery]) async {
+    var fromWhere = ImageSource.camera;
+
+    if (pickFromGallery == true) {
+      fromWhere = ImageSource.gallery;
+    }
+
+    var file = await ImagePicker.pickImage(source: fromWhere);
+
+    if (file != NO_DATA) {
+      updateState(file);
+    }
+
+    return file;
+  }
+
+  /// String Function => bool
+  ///
+  /// Télécharge une photo située a l'adresse url
+  downloadPhoto(String url, Function updateState) {
+    return true;
+  }
+
+  /// Function bool => File/NO_DATA
+  ///
+  /// Prend une vidéo via la caméra,
+  /// (ou via Gallery si 2nd argument existe && true)
+  /// et retourne le fichier
+  Future<File> takeVideo(Function updateState, [bool pickFromGallery]) async {
+    var fromWhere = ImageSource.camera;
+
+    if (pickFromGallery == true) {
+      fromWhere = ImageSource.gallery;
+    }
+
+    var file = await ImagePicker.pickVideo(source: fromWhere);
+
+    if (file != NO_DATA) {
+      updateState(file);
+    }
+
+    return file;
+  }
+
+  /// String Function => void
+  ///
+  /// Télécharge une vidéo située a l'adresse url
+  downloadVideo(String url, Function updateState) {
+    return true;
+  }
+
+  /// .. => ..
+  ///
+  ///
+}
+
+/// nous permet de gérer nos fichiers (File)
+class FileManager {
+  LocalFileSystem _localFileSystem;
+
+  FileManager() {
+    _localFileSystem = LocalFileSystem();
+  }
+
+  /// String File Function => bool
+  ///
+  /// Nous permet de supprimer un fichier
+  /// avec son path, ou avec un objet File
+  Future<bool> deleteFile(
+      String filePath, File file, Function updateState) async {
+    if (filePath != NO_DATA) {
+      file = _localFileSystem.file(filePath);
+      await file.delete(recursive: true);
+    } else if (file != NO_DATA) {
+      await file.delete(recursive: true);
+    }
+
+    return true;
+  }
+
+  /// File String String Function => String
+  ///
+  /// sauvegarde le fichier, nommé selon vos désirs,
+  ///  et retourne le path local
+  Future<String> saveFile(
+      File file, String dir, String fileName, Function updateState) async {
+    /// le path du fichier qu'on veut stocker quelque part
+    String filePath = file.path;
+
+    /// l'extension du fichier
+    String fileExt = extension(filePath);
+
+    /// le path local ou on veut stocker ce fichier
+    String localfilePath = dir + "/$fileName$fileExt";
+
+    // copy the file to a new path
+    File newLocalImage = await file.copy(localfilePath);
+
+
+    print("local file path: $localfilePath");
+
+    return newLocalImage.path;
+  }
+
+  /// .. => ..
+  ///
+  ///
+
+  /// .. => ..
+  ///
+  ///
+
 }
