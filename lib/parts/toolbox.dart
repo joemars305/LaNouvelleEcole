@@ -429,18 +429,34 @@ class SoundPlayer {
 /// de l'audio provenant
 /// du microphone de l'utilisateur,
 class SoundRecorder {
-  String audioPath = NO_DATA;
 
-  /// String Function => void
+  /// un objet contenant des données relatives 
+  /// au dernier enregistrement local
+  Recording recording = NO_DATA;
+
+ 
+
+  /// String String Function => void
   ///
   /// demarre un enregistrement
   /// audio via microphone,
-  /// stocké localement a l'adresse localPath
-  Future<void> startRecording(String localPath, Function updateState) async {
+  /// stocké localement
+  Future<void> startRecording(String dirPath, String fileName, Function updateState) async {
     try {
       /// demande la permission à l'user de pouvoir
       /// utiliser son microphone, et son stockage
       await _requestMicAndStoragePermissions();
+
+      // Check permissions before starting
+      bool hasPermissions = await AudioRecorder.hasPermissions;
+
+      print("permissions audiorecorder: $hasPermissions");
+
+      /// le type de fichier audio
+      String fileType = "m4a";
+
+      /// le path complet de fichier audio
+      String fullPath = "$dirPath/$fileName.$fileType";
 
       /// si il n'y a pas d'enregistrement en cours
       if (!await isRecording()) {
@@ -448,15 +464,14 @@ class SoundRecorder {
 
         /// démarre l'enregistrement audio
         /// qui est désormais stocké à localPath
-        await AudioRecorder.start(path: localPath);
+        await AudioRecorder.start(path: fullPath);
 
         updateState();
       } else {
         print("Pas de permissions, ou enregistrement audio déja en cours..");
       }
-    } catch (e) {
+    }  catch (e) {
       print("oups: L'erreur suivante à été reçue suite à une tentnt audio: $e");
-      print(e);
     }
 
     return NO_DATA;
@@ -464,8 +479,9 @@ class SoundRecorder {
 
   Future isRecording() async => (await AudioRecorder.isRecording);
 
-  _requestMicAndStoragePermissions() {
-    PermissionHandler().requestPermissions([
+
+  _requestMicAndStoragePermissions() async {
+    await PermissionHandler().requestPermissions([
       PermissionGroup.microphone,
       PermissionGroup.storage,
     ]);
@@ -482,7 +498,7 @@ class SoundRecorder {
       /// un message audio..
       if (await isRecording()) {
         /// arrete l'enregistrement audio
-        var recording = await AudioRecorder.stop();
+        recording = await AudioRecorder.stop();
 
         print("Adresse de l'enregistrement audio: ${recording.path}");
 
@@ -494,7 +510,7 @@ class SoundRecorder {
         return NO_DATA;
       }
     } catch (e) {
-      print(e);
+      print("coké: $e");
     }
 
     return NO_DATA;
@@ -604,7 +620,7 @@ class FileManager {
   /// sauvegarde le fichier, nommé selon vos désirs,
   ///  et retourne le path local
   Future<String> saveFile(
-      File file, String dir, String fileName, Function updateState) async {
+      File file, String dirPath, String fileName, Function updateState) async {
     /// le path du fichier qu'on veut stocker quelque part
     String filePath = file.path;
 
@@ -612,7 +628,7 @@ class FileManager {
     String fileExt = extension(filePath);
 
     /// le path local ou on veut stocker ce fichier
-    String localfilePath = dir + "/$fileName$fileExt";
+    String localfilePath = dirPath + "/$fileName$fileExt";
 
     // copy the file to a new path
     File newLocalImage = await file.copy(localfilePath);

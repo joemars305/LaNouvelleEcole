@@ -97,10 +97,6 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  /// permet de créer une jolie amimation de countdown
-  /// lors de l'enregistrement audio
-  AnimationController controller;
-
   /// nous permet d'afficher des snackbar
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -120,20 +116,10 @@ class _StepCreationState extends State<StepCreation>
   /// des fichiers (File)
   FileManager fileManager;
 
-  /// convertit le temps restant
-  /// de l'enregistrement audio (Duration) en cours,
-  /// en format mm:ss (string)
-  String get timerString {
-    Duration duration = controller.duration * controller.value;
-    return '${duration.inMinutes}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}';
-  }
-
   /// initialise le controller
   @override
   void initState() {
     super.initState();
-
-    controller = initAnimationController();
 
     audioPlayer = new SoundPlayer();
 
@@ -152,19 +138,12 @@ class _StepCreationState extends State<StepCreation>
     fileManager = new FileManager();
   }
 
-  AnimationController initAnimationController() {
-    return AnimationController(
-      vsync: this,
-      duration: Duration(seconds: DUREE_MSG_AUDIO),
-    );
-  }
-
   @override
   void dispose() {
     print('allez hop on ferme boutique.');
 
-    controller.dispose();
     audioPlayer.stop(() {});
+    audioRecorder.stopRecording(() {});
 
     super.dispose();
   }
@@ -387,19 +366,25 @@ class _StepCreationState extends State<StepCreation>
 
   /// quel instructions donner a l'user durant étape audio
   String noRecordingMsg() {
-    if (audioRecorder.audioPath == NO_DATA) {
+    /// si il n'existe aucun enregistrement audio,
+    /// (recording ou audioPath)
+    if (audioRecorder.recording == NO_DATA) {
       return "Appuie sur le micro pour enregistrer un message audio.";
-    } else {
+    }
+
+    /// sinon invite user à écouter
+    else {
       return "Appuie sur l'icone play pour écouter le message audio.";
     }
   }
 
   /// enregistrement, donc countdown
   Widget recordingAudioPanel() {
-    return circularCountdown();
+    return centeredMsg(
+        "assets/icon.png", "Enregistrement audio en cours...", Colors.pink);
   }
 
-  /// une compte à rebours circulaire
+  /*/// une compte à rebours circulaire
   Widget circularCountdown() {
     return Container(
       color: Colors.orange,
@@ -461,13 +446,11 @@ class _StepCreationState extends State<StepCreation>
 
   /// arrete l'enregistrement audio en cours
   void endAnim() {
-    if (_isRecording) {
-      audioRecorder.stopRecording(() {
-        setState(() {
-          _isRecording = NO_RECORD;
-        });
+    audioRecorder.stopRecording(() {
+      setState(() {
+        _isRecording = NO_RECORD;
       });
-    }
+    });
   }
 
   /// le texte dans le gros cercle
@@ -497,7 +480,7 @@ class _StepCreationState extends State<StepCreation>
         ],
       ),
     );
-  }
+  }*/
 
   Widget uploadFilesPanel(Report userReport) {
     if (photoVideoUploadStatus == NOT_UPLOADED) {
@@ -588,7 +571,7 @@ class _StepCreationState extends State<StepCreation>
     }
 
     return AppBar(
-      leading: backButton(),
+      leading: backButton(userReport),
       title: titleNavigation(title, userReport, context),
       actions: <Widget>[
         delButton(userReport, context),
@@ -623,7 +606,7 @@ class _StepCreationState extends State<StepCreation>
     var babyLesson = userReport.getLatestBabyLessonSeen();
     var steps = babyLesson.steps;
 
-    return steps
+    List<Choice> choices = steps
         .asMap()
         .map((etapeIndex, step) {
           var etapeDescription = "🚀 Etape " + (etapeIndex + 1).toString();
@@ -639,6 +622,10 @@ class _StepCreationState extends State<StepCreation>
         })
         .values
         .toList();
+    
+    /// ajoute un choix permettant de passer 
+    /// l'écran de step_creation en mode step_viewer
+    
   }
 
   void fnForStepChoice(Future<Choice> futureChoice, Report userReport) {
@@ -712,10 +699,19 @@ class _StepCreationState extends State<StepCreation>
   Future<void> nextButtonAction(Report userReport, BuildContext context) async {
     if (sousEtape < lastStep) {
       if (sousEtape == PRENDRE_PHOTO_VIDEO) {
-        ///savePhotoVideo(_photoVideoFile, _fileType, userReport);
         incrementSubstep();
       } else if (sousEtape == MSG_AUDIO) {
-        ///saveAudioPath(_audioPath, userReport);
+        /// si on est à l'étape audio,
+        /// on arrete l'enregistreur et le lecteur
+        if (sousEtape == MSG_AUDIO) {
+          stopRecordingAndSave(userReport);
+          audioPlayer.stop(() {
+            setState(() {
+              _playerState = STOPPED;
+            });
+          });
+        }
+
         incrementSubstep();
       } else if (sousEtape == INVENTAIRE) {
         nextStepOrLessonOver(userReport, context);
@@ -769,20 +765,35 @@ class _StepCreationState extends State<StepCreation>
 
   /// le bouton permettant
   /// de passer à la sous étape précédente
-  Widget backButton() {
+  Widget backButton(Report userReport) {
     return IconButton(
       icon: Icon(
         Icons.arrow_back,
       ),
-      onPressed: backButtonAction,
+      onPressed: () {
+        backButtonAction(userReport);
+      },
     );
   }
 
   /// les actions a effectuer pour passer
   /// a la sous étape précédente
-  void backButtonAction() {
+  void backButtonAction(Report userReport) {
     if (sousEtape > PRENDRE_PHOTO_VIDEO) {
-      decrementSubstep();
+      /// si on est à l'étape audio,
+      /// on arrete l'enregistreur et le lecteur
+      if (sousEtape == MSG_AUDIO) {
+        stopRecordingAndSave(userReport);
+        audioPlayer.stop(() {
+          setState(() {
+            _playerState = STOPPED;
+          });
+        });
+
+        decrementSubstep();
+      } else {
+        decrementSubstep();
+      }
     }
   }
 
@@ -831,7 +842,7 @@ class _StepCreationState extends State<StepCreation>
   /// les icones de l'étape message audio
   List<Widget> msgAudioIcons(Report userReport) {
     if (_isRecording == WE_RECORD) {
-      return micIcon();
+      return micIcon(userReport);
     } else {
       return micAndPlayIcons(userReport);
     }
@@ -839,9 +850,9 @@ class _StepCreationState extends State<StepCreation>
 
   /// si on enregistre de l'audio
   /// on veut juste l'icone micro
-  List<Widget> micIcon() {
+  List<Widget> micIcon(Report userReport) {
     return [
-      recordIcon(),
+      recordIcon(userReport),
     ];
   }
 
@@ -849,13 +860,15 @@ class _StepCreationState extends State<StepCreation>
   /// on veut micro + play/pause
   List<Widget> micAndPlayIcons(Report userReport) {
     return [
-      recordIcon(),
+      recordIcon(userReport),
       playPauseIcon(userReport),
       restartAudioIcon(userReport),
     ];
   }
 
-  /// l'icone qui joue un enregistrement audio
+  /// Report => void
+  ///
+  ///
   Widget restartAudioIcon(Report userReport) {
     return IconButton(
       icon: Icon(
@@ -870,9 +883,11 @@ class _StepCreationState extends State<StepCreation>
   }
 
   Future<void> restartAudioActions(Report userReport) async {
-    /*await audioPlayer.stop();
-
-    playIconActions(userReport);*/
+    audioPlayer.restart(() {
+      setState(() {
+        _playerState = PLAYING;
+      });
+    });
   }
 
   /// l'icone qui joue/pause un enregistrement audio
@@ -896,7 +911,28 @@ class _StepCreationState extends State<StepCreation>
         size: BOTTOM_ICON_SIZE,
       ),
       onPressed: () {
-        playIconActions(userReport);
+        var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
+        String localAudioPath = step.audioFilePath;
+        String audioUrl = step.audioFileUrl;
+
+        if (localAudioPath != NO_DATA) {
+          audioPlayer.playLocal(localAudioPath, () {
+            setState(() {
+              _playerState = PLAYING;
+            });
+          });
+        } else if (audioUrl != NO_DATA) {
+          audioPlayer.playRemote(audioUrl, () {
+            setState(() {
+              _playerState = PLAYING;
+            });
+          });
+        } else {
+          displaySnackbar(
+              _scaffoldKey,
+              "Il n'y a pas encore de message audio à lire pour cette étape.",
+              3500);
+        }
       },
       color: Colors.blue,
     );
@@ -909,7 +945,13 @@ class _StepCreationState extends State<StepCreation>
         Icons.pause,
         size: BOTTOM_ICON_SIZE,
       ),
-      onPressed: pauseIconActions,
+      onPressed: () {
+        audioPlayer.pause(() {
+          setState(() {
+            _playerState = PAUSED;
+          });
+        });
+      },
       color: Colors.blue,
     );
   }
@@ -921,186 +963,94 @@ class _StepCreationState extends State<StepCreation>
         Icons.play_arrow,
         size: BOTTOM_ICON_SIZE,
       ),
-      onPressed: resumeIconActions,
+      onPressed: () {
+        audioPlayer.resume(() {
+          setState(() {
+            _playerState = PLAYING;
+          });
+        });
+      },
       color: Colors.blue,
     );
   }
 
-  /// les actions a effectuer pour play/pause/resume
-  void pauseIconActions() async {
-    /*await audioPlayer.pause();
-
-    setState(() {
-      _playerState = PAUSED;
-    });*/
-  }
-
-  ///
-  void playIconActions(Report userReport) async {
-    /*var currentStep = userReport.getLatestBabyLessonSeen().getCurrentStep();
-    var audioUrl = currentStep.audioFileUrl;
-    var audioPath = currentStep.audioFilePath;
-    File file;
-
-    print("play: $audioPath");
-
-    if (audioUrl != NO_DATA || 
-        audioPath != NO_DATA || 
-        _audioPath != NO_DATA) {
-      await audioPlayer.play(
-        recordingPathOrUrl(_audioPath, audioUrl, audioPath),
-        isLocal: localOrNot(userReport, audioPath),
-      );
-
-      setState(() {
-        _playerState = PLAYING;
-      });
-      
-    }*/
-  }
-
-  void resumeIconActions() async {
-    /*await audioPlayer.resume();
-
-    setState(() {
-      _playerState = PLAYING;
-    });*/
-  }
-
-  /// la durée de l'enregistrement audio en cours
-  ///
-  Widget recordDuration() {
-    if (_isRecording == NO_RECORD) {
-      return nothing();
-    } else if (_isRecording == WE_RECORD) {
-      return secondsPassed();
-    } else {
-      throw Error();
-    }
-  }
-
-  /// conteneur vide parce qu'on n'enregistre rien
-  Widget nothing() {
-    return Text('0:00');
-  }
-
-  Widget secondsPassed() {
-    return Text('En cours...');
-  }
-
   // l'icone nous permettant d'enregistrer
   /// un message audio
-  Widget recordIcon() {
+  Widget recordIcon(Report userReport) {
     if (_isRecording == NO_RECORD) {
-      return letsRecordIcon();
+      return startRecordingIcon(userReport);
     } else if (_isRecording == WE_RECORD) {
-      return stopRecordIcon();
+      return stopRecordingIcon(userReport);
     } else {
       throw Error();
     }
   }
 
   // l'icone qui demarre un enregistrement audio
-  Widget letsRecordIcon() {
+  Widget startRecordingIcon(Report userReport) {
     return IconButton(
       icon: Icon(
         Icons.mic,
         size: BOTTOM_ICON_SIZE,
       ),
-      onPressed: () {
-        //letsRecordActions();
+      onPressed: () async {
+        startRecording(userReport);
       },
       color: Colors.blue,
     );
   }
 
+  void startRecording(Report userReport) async {
+    /// supprime le précédent fichier audio, si existant
+    var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
+    String localAudioPath = step.audioFilePath;
+    bool oldAudioExists;
+
+    if (localAudioPath != NO_DATA) {
+      oldAudioExists =
+          await fileManager.deleteFile(localAudioPath, NO_DATA, () {});
+    }
+
+    print("old audio file exists: $oldAudioExists");
+
+    /// le path du dossier appli
+    Directory dir = await getExternalStorageDirectory();
+    String dirPath = dir.path;
+    String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+
+    await audioRecorder.startRecording(dirPath, fileName, () {
+      setState(() {
+        _isRecording = WE_RECORD;
+      });
+    });
+  }
+
   /// l'icone qui arrete un enregistrement audio
-  Widget stopRecordIcon() {
+  Widget stopRecordingIcon(Report userReport) {
     return IconButton(
       icon: Icon(
         Icons.stop,
         size: BOTTOM_ICON_SIZE,
       ),
-      onPressed: () {
-        //stopRecordActions(),
+      onPressed: () async {
+        stopRecordingAndSave(userReport);
       },
       color: Colors.blue,
     );
   }
 
-  /*
-  /// les actions pour demarrer un enregistrement
-  void letsRecordActions() async {
-    print('coucou');
+  void stopRecordingAndSave(Report userReport) async {
+    /// on arrête l'écoute, et on
+    /// récupère le path du fichier audio
+    String localAudioPath = await audioRecorder.stopRecording(() {
+      setState(() {
+        _isRecording = NO_RECORD;
+      });
+    });
 
-    try {
-      /// demande la permission à l'user de pouvoir
-      /// utiliser son microphone, et son stockage
-      await PermissionHandler().requestPermissions([
-        PermissionGroup.microphone,
-        PermissionGroup.storage,
-      ]);
-
-      /// si il n'y a pas d'enregistrement en cours
-      if (!(await AudioRecorder.isRecording)) {
-        print("start recording");
-
-        /// l'adresse de résidence du fichier audio
-        var filePath = await getExternalStorageFilePath(NO_DATA, '.m4a');
-
-        /// démarre l'enregistrement audio
-        await AudioRecorder.start(path: filePath);
-
-        /// remet l'animation de countdown au début
-        controller.reverse(from: BEGIN_ANIM);
-
-        /// update le state pour qu'on
-        /// puisse voir les changements a l'écran
-        setState(() {
-          _isRecording = WE_RECORD;
-        });
-      } else {
-        print("No permissions, or we already are recording");
-      }
-    } catch (e) {
-      print("oups..");
-      print(e);
-    }
+    /// on sauvegarde ce path local dans notre db
+    storeAudioPath(localAudioPath, userReport);
   }
-  */
-
-  /*
-  /// les actions pour arreter un enregistrement
-  Future stopRecordActions() async {
-    try {
-      /// si nous somme en train d'enregistrer
-      /// un message audio..
-      if (await AudioRecorder.isRecording) {
-        /// arrete l'enregistrement audio
-        var recording = await AudioRecorder.stop();
-
-        print("Stop recording: ${recording.path}");
-
-        /// update le state
-        setState(() {
-          _audioPath = getRecordingFile(recording);
-          _isRecording = NO_RECORD;
-        });
-
-        return NO_RECORD;
-      } else {
-        print('There is no recording to be stopped');
-      }
-    } catch (e) {
-      print(e);
-    }
-  }
-  */
-
-  /*File getRecordingFile(Recording recording) {
-    File file = widget.localFileSystem.file(recording.path);
-    return file;
-  }*/
 
   List<Widget> uploadFilesIcons(Report userReport) {
     return [
@@ -1125,39 +1075,6 @@ class _StepCreationState extends State<StepCreation>
     return [
       addItemIcon(userReport, context),
     ];
-  }
-
-
-  /// Select an image via gallery or camera
-  Future<void> _pickImage(/*ImageSource source*/) async {
-    /*try {
-      File selected = await ImagePicker.pickImage(source: source);
-
-      if (selected != null) {
-        setState(() {
-          _photoVideoFile = selected;
-          _fileType = PHOTO_FILE;
-        });
-      }
-    } catch (e) {
-      print(e);
-    }*/
-  }
-
-  /// Select an vidéo via gallery or camera
-  Future<void> _pickVideo(/*ImageSource source*/) async {
-    /*try {
-      File selected = await ImagePicker.pickVideo(source: source);
-
-      if (selected != null) {
-        setState(() {
-          _photoVideoFile = selected;
-          _fileType = VIDEO_FILE;
-        });
-      }
-    } catch (e) {
-      print(e);
-    }*/
   }
 
   // l'icone nous permettant d'ajouter
@@ -1215,7 +1132,8 @@ class _StepCreationState extends State<StepCreation>
 
   // l'icone nous permettant de prendre
   // une photo avec l'appareil photo
-  Widget photoCameraIcon(Report userReport, int whatCapture, BuildContext context) {
+  Widget photoCameraIcon(
+      Report userReport, int whatCapture, BuildContext context) {
     Function actions;
 
     if (whatCapture == PHOTO_AND_VIDEO) {
@@ -1269,7 +1187,8 @@ class _StepCreationState extends State<StepCreation>
 
   // l'icone nous permettant de prendre
   // une photo dans la mémoire du téléphone
-  Widget photoLibraryIcon(Report userReport, int whatCapture, BuildContext context) {
+  Widget photoLibraryIcon(
+      Report userReport, int whatCapture, BuildContext context) {
     Function actions;
 
     if (whatCapture == PHOTO_AND_VIDEO) {
@@ -1638,30 +1557,32 @@ class _StepCreationState extends State<StepCreation>
     userReport.save();
   }
 
-  void storePhotoVideoPath(
-      String newfilePath, String fileUrl, Report userReport) {
+  /// String int Report => void
+  ///
+  /// Stocke le path local d'une photo/vidéo,
+  /// dans la db
+  void storePhotoVideoPath(String filePath, int fileType, Report userReport) {
     /// get the current step data
     var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
 
     /// store new paths
-    step.photoVideoFilePath = newfilePath;
-    step.photoVideoFileUrl = fileUrl;
-
+    step.photoVideoFilePath = filePath;
     step.fileType = _fileType;
-
-    print("file type during save: " + _fileType.toString());
 
     /// save data
     userReport.save();
   }
 
-  void storeAudioPath(String newfilePath, String fileUrl, Report userReport) {
+  /// String Report => void
+  ///
+  /// Stocke le path local d'un message audio,
+  /// dans la db
+  void storeAudioPath(String newfilePath, Report userReport) {
     /// get the current step data
     var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
 
     /// store new paths
     step.audioFilePath = newfilePath;
-    step.audioFileUrl = fileUrl;
 
     /// save data
     userReport.save();
@@ -1676,46 +1597,11 @@ class _StepCreationState extends State<StepCreation>
       _photoSize = NORMAL_SIZE;
       sousEtape = indexEtape;
       _isRecording = NO_RECORD;
-      audioRecorder.audioPath = NO_DATA;
+      audioRecorder.recording = NO_DATA;
       _playerState = STOPPED;
       audioPlayer.stop(() {});
+      audioRecorder.stopRecording(() {});
     });
-  }
-
-  String recordingPathOrUrl(File recording, String audioUrl, String audioPath) {
-    if (recording != NO_DATA) {
-      return recording.path;
-    } else if (audioUrl != NO_DATA) {
-      return audioUrl;
-    } else if (audioPath != NO_DATA) {
-      return audioPath;
-    } else {
-      throw Error();
-    }
-  }
-
-  localOrNot(Report userReport, String audioPath) {
-    if (audioRecorder.audioPath != NO_DATA || audioPath != NO_DATA) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  String audioUrl(Report userReport) {
-    String audioUrl =
-        userReport.getLatestBabyLessonSeen().getCurrentStep().audioFileUrl;
-
-    print("audio url: " + audioUrl);
-    return audioUrl;
-  }
-
-  bool photoStepComplete() {
-    return _photoVideoFile != NO_DATA;
-  }
-
-  bool msgAudioStepComplete() {
-    return audioRecorder.audioPath != NO_DATA;
   }
 
   void noStepChoice(Choice choice) {
@@ -1822,14 +1708,15 @@ class _StepCreationState extends State<StepCreation>
 
   void noFileChoice() {
     displaySnackbar(_scaffoldKey, "On ne prend pas de photo/vidéo.", 2500);
-  } 
+  }
 
   /// Report bool => void
-  /// 
-  /// prend une photo, stocke la dans le state, 
-  /// stocke la dans le dossier 
+  ///
+  /// prend une photo, stocke la dans le state,
+  /// stocke la dans le dossier
   /// local des données de l'appli,
   /// et sauvegarde le path local de cette photo
+  /// et supprime la photo précédemment prise, si path existant
   /// 2nd parametre optionnel, si true, pick from gallery
   recordAndSavePhoto(Report userReport, [bool pickOnGallery]) async {
     /// prend une photo,
@@ -1847,46 +1734,52 @@ class _StepCreationState extends State<StepCreation>
     /// et on sauvegarde les infos relatives a son emplacement
     /// et type (photo) dans notre base de données
     if (photoFile != NO_DATA) {
-      /// le path du dossier appli
-      Directory appDir = await getApplicationDocumentsDirectory();
-      String appDirPath = appDir.path;
+      /// l'étape actuelle
+      LessonStep currentStep =
+          userReport.getLatestBabyLessonSeen().getCurrentStep();
 
-      /// le path de la photo prise avec ImagePicker
-      String photoFilePath = photoFile.path;
+      /// le path du dossier appli
+      Directory dir = await getExternalStorageDirectory();
+      String dirPath = dir.path;
+
+      /// le path de la photo précédemment prise,
+      /// pour pouvoir éventuellement la supprimer
+      String previousPhotoFilePath = currentStep.photoVideoFilePath;
 
       /// now in milliseconds
-      int nowMillis = DateTime.now().millisecondsSinceEpoch;
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
 
       /// sauvegarde la photo prise
       /// dans le dossier appli,
       /// et obtient le path
-      String localPhotoPath = await fileManager.saveFile(photoFile, appDirPath, "$nowMillis", () {});
+      String localPhotoPath =
+          await fileManager.saveFile(photoFile, dirPath, fileName, () {});
 
-      /// supprime la photo prise par ImagePicker
-      bool deleted = await fileManager.deleteFile(photoFilePath, NO_DATA, () {});
+      /// supprime la photo prise précedemment, si existante
+      bool deleted;
 
-      /// sauvegarde le path 
-      var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
-      step.photoVideoFilePath = localPhotoPath;
-      step.fileType = _fileType;
-      userReport.save();
+      if (previousPhotoFilePath != NO_DATA) {
+        deleted =
+            await fileManager.deleteFile(previousPhotoFilePath, NO_DATA, () {});
+      }
 
-      print("photo path (image picker): $photoFilePath");
-      print("app folder path: $appDirPath");
+      /// sauvegarde le path
+      storePhotoVideoPath(localPhotoPath, _fileType, userReport);
+
+      print("previous photo (if any): $previousPhotoFilePath");
+      print("app folder path: $dirPath");
       print("local file path 2nd time: $localPhotoPath");
       print("deletion boolean: $deleted");
     }
-    
-
-
   }
 
   /// Report bool => void
-  /// 
-  /// prend une video, stocke la dans le state, 
-  /// stocke la dans le dossier 
+  ///
+  /// prend une video, stocke la dans le state,
+  /// stocke la dans le dossier
   /// local des données de l'appli,
-  /// et sauvegarde le path local de cette video
+  /// sauvegarde le path local de cette video,
+  /// et supprime la video précédemment prise, si path existant
   /// 2nd parametre optionnel, si true, pick from gallery
   recordAndSaveVideo(Report userReport, [bool pickFromGallery]) async {
     /// prend une vidéo,
@@ -1904,38 +1797,43 @@ class _StepCreationState extends State<StepCreation>
     /// et on sauvegarde les infos relatives a son emplacement
     /// et type (video) dans notre base de données
     if (videoFile != NO_DATA) {
-      /// le path du dossier appli
-      Directory appDir = await getApplicationDocumentsDirectory();
-      String appDirPath = appDir.path;
+      /// l'étape actuelle
+      LessonStep currentStep =
+          userReport.getLatestBabyLessonSeen().getCurrentStep();
 
-      /// le path de la photo prise avec ImagePicker
-      String videoFilePath = videoFile.path;
+      /// le path du dossier appli
+      Directory dir = await getExternalStorageDirectory();
+      String dirPath = dir.path;
+
+      /// le path de la vidéo précédemment prise,
+      /// pour pouvoir éventuellement la supprimer
+      String previousVideoFilePath = currentStep.photoVideoFilePath;
 
       /// now in milliseconds
-      int nowMillis = DateTime.now().millisecondsSinceEpoch;
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
 
       /// sauvegarde la video prise
       /// dans le dossier appli,
       /// et obtient le path
-      String localVideoPath = await fileManager.saveFile(videoFile, appDirPath, "$nowMillis", () {});
+      String localVideoPath =
+          await fileManager.saveFile(videoFile, dirPath, fileName, () {});
 
-      /// supprime la vidéo prise par ImagePicker
-      bool deleted = await fileManager.deleteFile(videoFilePath, NO_DATA, () {});
+      /// supprime la vidéo prise précedemment, si existante
+      bool deleted;
 
-      /// sauvegarde le path 
-      var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
-      step.photoVideoFilePath = localVideoPath;
-      step.fileType = _fileType;
-      userReport.save();
+      if (previousVideoFilePath != NO_DATA) {
+        deleted =
+            await fileManager.deleteFile(previousVideoFilePath, NO_DATA, () {});
+      }
 
-      print("video path (image picker): $videoFilePath");
-      print("app folder path: $appDirPath");
+      /// sauvegarde le path
+      storePhotoVideoPath(localVideoPath, _fileType, userReport);
+
+      print("previous vidéo (if any): $previousVideoFilePath");
+      print("app folder path: $dirPath");
       print("local file path 2nd time: $localVideoPath");
       print("deletion boolean: $deleted");
     }
-    
-
-
   }
 
   void getLocalPhoto(Report userReport) {
@@ -1982,126 +1880,4 @@ class _StepCreationState extends State<StepCreation>
     displaySnackbar(
         _scaffoldKey, "Un upload de fichier est déja en cours.", 2500);
   }
-
-  /*
-  horizontalUploadProgress(double progressPercent) {
-    return Padding(
-      padding: const EdgeInsets.all(15.0),
-      child: LinearProgressIndicator(value: progressPercent),
-    );
-  }
-
-
-  /// sauvegarde le fichier photo/vidéo pris
-  /// et supprime le fichier précént, si il existe
-  savePhotoVideo(File photoVideoFile, int fileType, Report userReport) async {
-    if (photoVideoFile != NO_DATA) {
-      /// l'étape actuelle
-      LessonStep currentStep =
-          userReport.getLatestBabyLessonSeen().getCurrentStep();
-
-      /// le path de la photo/vidéo déja existante.
-      String photoVideoPath = currentStep.photoVideoFilePath;
-
-      /// si un fichier déja existant, on le supprime
-      bool oldFileExisted = deleteLocalFile(photoVideoPath);
-
-      /// on sauvegarde le nouveau fichier photo/video
-      String newPhotoVideoPath = await saveLocalFile(photoVideoFile);
-
-      print("old photo video path: $photoVideoPath");
-      print("old photo video existed: $oldFileExisted");
-      print("new photo video path: $newPhotoVideoPath");
-
-      /// on stocke des infos relatives à ce fichier, necessaire
-      /// pour l'afficher plus tard
-      currentStep.photoVideoFilePath = newPhotoVideoPath;
-      currentStep.fileType = fileType;
-
-      /// sauvegarde ces infos
-      userReport.save();
-    }
-  }
-
-  /// sauvegarde le path du fichier audio local
-  /// et supprime le fichier précént, si il existe
-  saveAudioPath(File recording, Report userReport) async {
-    if (recording != NO_DATA) {
-      /// l'étape actuelle
-      LessonStep currentStep =
-          userReport.getLatestBabyLessonSeen().getCurrentStep();
-
-      /// le path de l'audio déja existante.
-      String audioPath = currentStep.audioFilePath;
-
-      /// si un fichier déja existant, on le supprime
-      bool oldFileExisted = deleteLocalFile(audioPath);
-
-      /// le path du fichier audio enregistré localement par AudioRecorder
-      var newAudioPath = recording.path;
-
-      print("old audio path: $audioPath");
-      print("old audio existed: $oldFileExisted");
-      print("new audio path: $newAudioPath");
-
-      /// on stocke des infos relatives à ce fichier, necessaire
-      /// pour l'afficher plus tard
-      currentStep.audioFilePath = newAudioPath;
-
-      /// sauvegarde ces infos
-      userReport.save();
-    }
-  }
-
- 
-  /// supprime un fichier local
-  ///
-  /// return un bool représentant si oui ou non il y a un filePath
-  Future<bool> deleteLocalFile(String filePath) async {
-    /// si il existe un fichier
-    if (filePath != NO_DATA) {
-      await File(filePath).delete(recursive: true);
-      return true;
-    } else {
-      return false;
-    }
-  }
-  
-  /// sauvegarde un fichier localement
-  Future<String> saveLocalFile(File file) async {
-    var filePath;
-    String localfilePath = await getExternalStorageFilePath(file);
-
-    // copy the file to a new path
-    File newLocalImage = await file.copy(localfilePath);
-
-    filePath = newLocalImage.path;
-
-    return filePath;
-  }
-
-  /// obtient le path d'un fichier multimédia pour notre appli
-  Future<String> getExternalStorageFilePath(File file, [String ext]) async {
-    String extStorDir = await getExternalStorageDirectoryStr();
-
-    var now = DateTime.now().millisecondsSinceEpoch;
-
-    if (ext == NO_DATA) {
-      ext = extension(file.path);
-    }
-
-    var localfilePath = '$extStorDir/$now$ext';
-
-    return localfilePath;
-  }
-
-  Future<String> getExternalStorageDirectoryStr() async {
-    var path;
-
-    await getExternalStorageDirectory().then((extDir) {
-      path = extDir.path;
-    });
-
-    return path;
-  }*/
 }
