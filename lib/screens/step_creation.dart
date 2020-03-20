@@ -1,8 +1,12 @@
+/// - implémente le bouton poubelle d'effacage de lecon
 ///
-/// - Dans la liste de choix de Etape .. (../..),
-/// ajoute un choix permettant de passer au meme écran que lesson_viewer,
-/// et back and forth
-///
+/// - fix le décalage qui survient lorsque on demarre un enregistrement
+/// et que un fichiier audio est en pause 
+/// (quand on resume, on veut le nouveau fichier audio enregisré)
+/// 
+/// - fix erreur qd on vient d'enregistrer fichier audio
+/// et qu'on appuie sur restart bouton
+/// 
 /// - Ajoute une icone Boussole, a coté de Favoris.
 /// ce panneau est constitué de 2 panneau swipable left right:
 ///
@@ -75,7 +79,7 @@ class _StepCreationState extends State<StepCreation>
           userReport = snapshot.data;
 
           /// it's time to do steps
-          panel = substepPanel(userReport);
+          panel = stepPanel(userReport);
         }
 
         /// if something got wrong trying
@@ -306,9 +310,45 @@ class _StepCreationState extends State<StepCreation>
   }
   */
 
+  /// _displayMode représente le type d'affichage
+  /// de l'étape.
+  ///
+  /// -1 pour STEP_CREATION
+  /// -2 pour STEP_VIEWER
+  int _displayMode = STEP_CREATION;
+
+  /*
+
+  /// _displayMode => Widget
+  /// 
+  /// 
+  Widget fnForDisplayMode(int displayMode) {
+    if (displayMode == STEP_CREATION) {
+      return fnForStepCreation();
+    } else if (displayMode == STEP_VIEWER) {
+      return fnForStepViewer();
+    } else {
+      throw Error();
+    }
+  }
+
+  */
+
+  /// Report => Widget
+  ///
   /// quel contenu doit on afficher entre la top bar et
-  /// la bottom bar
-  Widget substepPanel(Report userReport) {
+  /// la bottom bar.
+  Widget stepPanel(Report userReport) {
+    if (_displayMode == STEP_CREATION) {
+      return stepPanelForStepCreation(userReport);
+    } else if (_displayMode == STEP_VIEWER) {
+      return stepPanelForStepViewer(userReport);
+    } else {
+      throw ErrorDescription("Mode d'affichage invalide: $_displayMode");
+    }
+  }
+
+  Widget stepPanelForStepCreation(Report userReport) {
     if (sousEtape == PRENDRE_PHOTO_VIDEO) {
       return prendrePhotoVideoPanel(userReport,
           "Appuie sur l'appareil photo pour prendre une photo/vidéo.");
@@ -385,102 +425,102 @@ class _StepCreationState extends State<StepCreation>
   }
 
   /*/// une compte à rebours circulaire
-  Widget circularCountdown() {
-    return Container(
-      color: Colors.orange,
-      child: Padding(
-        padding: EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            bigCircleAndText(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// le gros cercle et le texte
-  Widget bigCircleAndText() {
-    return Expanded(
-      child: Align(
-        alignment: FractionalOffset.center,
-        child: AspectRatio(
-            aspectRatio: 1.0,
-            child: Stack(
-              children: <Widget>[
-                bigCircle(),
-                txtInsideBigCircle(),
-              ],
-            )),
-      ),
-    );
-  }
-
-  /// le gros cercle
-  Widget bigCircle() {
-    return Positioned.fill(
-      child: AnimatedBuilder(
-        animation: controller,
-        builder: (BuildContext context, Widget child) {
-          /// arrete l'enregistrement audio si l'animation est finie
-          stopRecordWhenNecessary();
-          return new CustomPaint(
-            painter: TimerPainter(
-              color: Colors.pink,
-              backgroundColor: Colors.white,
-              animation: controller,
+        Widget circularCountdown() {
+          return Container(
+            color: Colors.orange,
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  bigCircleAndText(),
+                ],
+              ),
             ),
           );
-        },
-      ),
-    );
-  }
-
-  /// arrete l'enregistrement audio si l'animation est finie
-  void stopRecordWhenNecessary() {
-    if (controller.value == END_ANIM) {
-      endAnim();
-    }
-  }
-
-  /// arrete l'enregistrement audio en cours
-  void endAnim() {
-    audioRecorder.stopRecording(() {
-      setState(() {
-        _isRecording = NO_RECORD;
-      });
-    });
-  }
-
-  /// le texte dans le gros cercle
-  Widget txtInsideBigCircle() {
-    return Align(
-      alignment: FractionalOffset.center,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Text(
-            'Vas-y, parle...',
-          ),
-
-          /// le compte a rebours numérique (mm:ss)
-          AnimatedBuilder(
-            animation: controller,
-            builder: (BuildContext context, Widget child) {
-              return new Text(
-                timerString,
-                style: TextStyle(
-                  fontSize: 45,
+        }
+      
+        /// le gros cercle et le texte
+        Widget bigCircleAndText() {
+          return Expanded(
+            child: Align(
+              alignment: FractionalOffset.center,
+              child: AspectRatio(
+                  aspectRatio: 1.0,
+                  child: Stack(
+                    children: <Widget>[
+                      bigCircle(),
+                      txtInsideBigCircle(),
+                    ],
+                  )),
+            ),
+          );
+        }
+      
+        /// le gros cercle
+        Widget bigCircle() {
+          return Positioned.fill(
+            child: AnimatedBuilder(
+              animation: controller,
+              builder: (BuildContext context, Widget child) {
+                /// arrete l'enregistrement audio si l'animation est finie
+                stopRecordWhenNecessary();
+                return new CustomPaint(
+                  painter: TimerPainter(
+                    color: Colors.pink,
+                    backgroundColor: Colors.white,
+                    animation: controller,
+                  ),
+                );
+              },
+            ),
+          );
+        }
+      
+        /// arrete l'enregistrement audio si l'animation est finie
+        void stopRecordWhenNecessary() {
+          if (controller.value == END_ANIM) {
+            endAnim();
+          }
+        }
+      
+        /// arrete l'enregistrement audio en cours
+        void endAnim() {
+          audioRecorder.stopRecording(() {
+            setState(() {
+              _isRecording = NO_RECORD;
+            });
+          });
+        }
+      
+        /// le texte dans le gros cercle
+        Widget txtInsideBigCircle() {
+          return Align(
+            alignment: FractionalOffset.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  'Vas-y, parle...',
                 ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }*/
+      
+                /// le compte a rebours numérique (mm:ss)
+                AnimatedBuilder(
+                  animation: controller,
+                  builder: (BuildContext context, Widget child) {
+                    return new Text(
+                      timerString,
+                      style: TextStyle(
+                        fontSize: 45,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          );
+        }*/
 
   Widget uploadFilesPanel(Report userReport) {
     if (photoVideoUploadStatus == NOT_UPLOADED) {
@@ -539,8 +579,44 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  /// la barre en haut de l'écran
-  Widget getTopBar(Report userReport, BuildContext context) {
+  /// _displayMode Report BuildContext => Widget
+  ///
+  /// Produit la barre en haut de l'écran
+  Widget getTopBar(int displayMode, Report userReport, BuildContext context) {
+    if (displayMode == STEP_CREATION) {
+      return getTopBarForStepCreation(userReport, context);
+    } else if (displayMode == STEP_VIEWER) {
+      return getTopBarForStepViewer(userReport, context);
+    } else {
+      throw Error();
+    }
+  }
+
+  /// Report BuildContext => Widget
+  ///
+  /// Produit la barre en haut de l'écran
+  /// pour le visionner d'étapes
+  Widget getTopBarForStepViewer(Report userReport, BuildContext context) {
+    var babyLesson = userReport.getLatestBabyLessonSeen();
+    var currentStepIndexPlusOneForCoherence = babyLesson.currentStep + 1;
+    var title = "Etape $currentStepIndexPlusOneForCoherence";
+
+    return AppBar(
+      leading: backButton(userReport),
+      title: titleNavigation(title, userReport, context),
+      actions: <Widget>[
+        nextButton(userReport, context),
+      ],
+    );
+  }
+
+  /// Report BuildContext => Widget
+  ///
+  ///
+  /// produit la barre en
+  /// haut de l'écran,
+  /// pour le créateur de leçon
+  Widget getTopBarForStepCreation(Report userReport, BuildContext context) {
     String title;
 
     if (userReport != null) {
@@ -553,11 +629,6 @@ class _StepCreationState extends State<StepCreation>
       /// etape 0, etape 1, etc...
       int stepIndex = lesson.currentStep + 1;
       String currentStepStr = "Etape " + stepIndex.toString();
-
-      /// substepIndex est la sous étape
-      /// de l'étape actuelle
-      //LessonStep currentStep = lesson.getCurrentStep();
-      //int substepIndex = currentStep.currentSubstep + 1;
 
       String currentSubstep = "(" +
           (sousEtape + 1).toString() +
@@ -622,10 +693,41 @@ class _StepCreationState extends State<StepCreation>
         })
         .values
         .toList();
-    
-    /// ajoute un choix permettant de passer 
-    /// l'écran de step_creation en mode step_viewer
-    
+
+    /// si on est en mode création d'étape,
+    /// on veut pouvoir avoir le choix de
+    /// basculer en mode visionnage d'étape, et vice versa
+    addDisplayModeChoice(_displayMode, choices);
+
+    return choices;
+  }
+
+  /// _displayMode List<Choice> => void
+  ///
+  /// Ajoute un choix de basculement entre displayModes
+  /// au tout début de la liste de choix (index 0)
+  void addDisplayModeChoice(int displayMode, List<Choice> choices) {
+    if (displayMode == STEP_CREATION) {
+      /// ajoute un choix permettant de passer
+      /// l'écran de step_creation en mode step_viewer
+      choices.insert(
+          0,
+          new Choice(
+            "Preview résultat final.",
+            STEP_VIEWER,
+          ));
+    } else if (displayMode == STEP_VIEWER) {
+      /// ajoute un choix permettant de passer
+      /// l'écran de step_viewer en mode step_creation
+      choices.insert(
+          0,
+          new Choice(
+            "Panneau de création/modification d'étape.",
+            STEP_CREATION,
+          ));
+    } else {
+      throw Error();
+    }
   }
 
   void fnForStepChoice(Future<Choice> futureChoice, Report userReport) {
@@ -697,7 +799,30 @@ class _StepCreationState extends State<StepCreation>
   /// les actions a effectuer pour passer
   /// d'une substep à un autre
   Future<void> nextButtonAction(Report userReport, BuildContext context) async {
-    if (sousEtape < lastStep) {
+    if (_displayMode == STEP_CREATION) {
+      incrementSubstepAndCie(userReport, context);
+    } else if (_displayMode == STEP_VIEWER) {
+      incrementCurrentStep(userReport);
+    }
+  }
+
+  void incrementCurrentStep(Report userReport) {
+    var babyLesson = userReport.getLatestBabyLessonSeen();
+    var currentStep = babyLesson.currentStep;
+    var lastStepIndex = babyLesson.steps.length - 1;
+
+    /// si on est pas encore à la derniere étape, on incremente
+    if (!(currentStep == lastStepIndex)) {
+      babyLesson.currentStep++;
+      userReport.save();
+    } else {
+      displaySnackbar(_scaffoldKey,
+          "On ne peut pas monter plus haut que la dernière étape.", 2500);
+    }
+  }
+
+  void incrementSubstepAndCie(Report userReport, BuildContext context) {
+    if (sousEtape < lastSubstep) {
       if (sousEtape == PRENDRE_PHOTO_VIDEO) {
         incrementSubstep();
       } else if (sousEtape == MSG_AUDIO) {
@@ -763,8 +888,9 @@ class _StepCreationState extends State<StepCreation>
     });
   }
 
-  /// le bouton permettant
-  /// de passer à la sous étape précédente
+  /// Report => void
+  ///
+  /// le bouton permettant de naviguer en arrière
   Widget backButton(Report userReport) {
     return IconButton(
       icon: Icon(
@@ -776,9 +902,37 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
+  /// Report => void
+  ///
   /// les actions a effectuer pour passer
   /// a la sous étape précédente
+  /// (en mode _displayMode == STEP_CREATION)
+  ///
+  /// ou a l'étape précedente
+  /// (en mode _displayMode == STEP_VIEWER)
   void backButtonAction(Report userReport) {
+    if (_displayMode == STEP_CREATION) {
+      decrementSubstepAndCie(userReport);
+    } else if (_displayMode == STEP_VIEWER) {
+      decrementCurrentStep(userReport);
+    }
+  }
+
+  void decrementCurrentStep(Report userReport) {
+    var babyLesson = userReport.getLatestBabyLessonSeen();
+    var currentStep = babyLesson.currentStep;
+
+    /// décremente si étape actuelle supérieure a 0
+    if (currentStep > 0) {
+      babyLesson.currentStep--;
+      userReport.save();
+    } else {
+      displaySnackbar(_scaffoldKey,
+          "On peut pas descendre plus bas que la première étape.", 2500);
+    }
+  }
+
+  void decrementSubstepAndCie(Report userReport) {
     if (sousEtape > PRENDRE_PHOTO_VIDEO) {
       /// si on est à l'étape audio,
       /// on arrete l'enregistreur et le lecteur
@@ -794,6 +948,9 @@ class _StepCreationState extends State<StepCreation>
       } else {
         decrementSubstep();
       }
+    } else {
+      displaySnackbar(_scaffoldKey,
+          "On peut pas descendre plus bas que la première étape.", 2500);
     }
   }
 
@@ -817,6 +974,17 @@ class _StepCreationState extends State<StepCreation>
 
   /// les icones de la sous étape en cours
   List<Widget> substepIcons(Report userReport, BuildContext context) {
+    if (_displayMode == STEP_CREATION) {
+      return substepIconsForStepCreation(userReport, context);
+    } else if (_displayMode == STEP_VIEWER) {
+      return substepIconsForStepViewer(userReport, context);
+    } else {
+      throw ErrorDescription("Invalide mode d'affichage: $_displayMode");
+    }
+  }
+
+  List<Widget> substepIconsForStepCreation(
+      Report userReport, BuildContext context) {
     if (sousEtape == PRENDRE_PHOTO_VIDEO) {
       return prendrePhotoIcons(userReport, context);
     } else if (sousEtape == MSG_AUDIO) {
@@ -883,11 +1051,19 @@ class _StepCreationState extends State<StepCreation>
   }
 
   Future<void> restartAudioActions(Report userReport) async {
-    audioPlayer.restart(() {
-      setState(() {
-        _playerState = PLAYING;
+
+    /// si il existe un fichier audio
+    /// a redemarrer
+    if (audioPlayer.haveWePlayedSomething == WE_HAVE_PLAYED_AUDIO) {
+      audioPlayer.restart(() {
+        setState(() {
+          _playerState = PLAYING;
+        });
       });
-    });
+    } else {
+      displaySnackbar(
+          _scaffoldKey, "Y'a rien à redémarrer pour l'instant.", 3000);
+    }
   }
 
   /// l'icone qui joue/pause un enregistrement audio
@@ -928,6 +1104,8 @@ class _StepCreationState extends State<StepCreation>
             });
           });
         } else {
+          print(localAudioPath);
+
           displaySnackbar(
               _scaffoldKey,
               "Il n'y a pas encore de message audio à lire pour cette étape.",
@@ -1001,6 +1179,18 @@ class _StepCreationState extends State<StepCreation>
   }
 
   void startRecording(Report userReport) async {
+    /// si un enregistrement audio est en train d'être lu
+    /// on arrete
+    if (_playerState == PLAYING || _playerState == PAUSED) {
+      await audioPlayer.stop(() {
+        setState(() {
+          _playerState = STOPPED;
+        });
+      });
+
+      
+    }
+
     /// supprime le précédent fichier audio, si existant
     var step = userReport.getLatestBabyLessonSeen().getCurrentStep();
     String localAudioPath = step.audioFilePath;
@@ -1039,17 +1229,23 @@ class _StepCreationState extends State<StepCreation>
     );
   }
 
-  void stopRecordingAndSave(Report userReport) async {
+  Future stopRecordingAndSave(Report userReport) async {
     /// on arrête l'écoute, et on
     /// récupère le path du fichier audio
-    String localAudioPath = await audioRecorder.stopRecording(() {
-      setState(() {
-        _isRecording = NO_RECORD;
+    if (_isRecording == WE_RECORD) {
+      String localAudioPath = await audioRecorder.stopRecording(() {
+        setState(() {
+          _isRecording = NO_RECORD;
+        });
       });
-    });
 
-    /// on sauvegarde ce path local dans notre db
-    storeAudioPath(localAudioPath, userReport);
+      /// on sauvegarde ce path local dans notre db
+      storeAudioPath(localAudioPath, userReport);
+
+      return true;
+    }
+
+    return false;
   }
 
   List<Widget> uploadFilesIcons(Report userReport) {
@@ -1318,7 +1514,7 @@ class _StepCreationState extends State<StepCreation>
         key: _scaffoldKey,
 
         // la barre en haut
-        appBar: getTopBar(userReport, context),
+        appBar: getTopBar(_displayMode, userReport, context),
 
         // la barre d'icones en bas de l'écran
         // (photo, microphone, text, etc...)
@@ -1611,65 +1807,88 @@ class _StepCreationState extends State<StepCreation>
     displaySnackbar(_scaffoldKey, msg, durationMsec);
   }
 
+  /// Choice Report => void
+  ///
+  /// soit on va vers une étape particulière,
+  /// soit on change le mode de visionnage des étapes
   void handleStepChoice(Choice choice, Report userReport) {
-    var bblesson = userReport.getLatestBabyLessonSeen();
-    bblesson.currentStep = choice.choiceValue;
+    var choiceValue = choice.choiceValue;
 
-    resetState(PRENDRE_PHOTO_VIDEO);
+    /// si on veut créer/modifier nos étapes
+    if (choiceValue == STEP_CREATION) {
+      setState(() {
+        _displayMode = STEP_CREATION;
+      });
+    }
 
-    userReport.save();
-  }
+    /// si on veut visionner l'étape
+    else if (choiceValue == STEP_VIEWER) {
+      setState(() {
+        _displayMode = STEP_VIEWER;
+      });
+    }
 
-  /* 
-  /// quand on appuie sur la poubelle,
-  /// on veut supprimer l'étape en cours de création
-  /// ainsi que le contenu multimédia associé
-  Future<void> supprimeEtapeActions(
-      Report userReport, BuildContext context) async {
-    /// les étapes de la lecon
-    /// et l'index de l'étape a supprimer
-    var babyLesson = userReport.getLatestBabyLessonSeen();
-    var steps = babyLesson.steps;
-    var currentStep = babyLesson.currentStep;
-
-    /// combien d'étapes existe t'il ?
-    var qtySteps = steps.length;
-
-    /// si il y a plus d'une étape
-    /// on supprime l'etape actuelle
-    if (qtySteps > 1) {
-      /// supprime le contenu photo/video/audio
-      /// local de l'étape
-      var step = babyLesson.getCurrentStep();
-      var photoVideoPath = step.photoVideoFilePath;
-      var audioPath = step.audioFilePath;
-      
-      await deleteLocalFile(photoVideoPath);
-      await deleteLocalFile(audioPath);
-
-      /// supprime l'étape
-      steps.removeAt(currentStep);
-
-      /// l'étape actuelle est la toute dernière étape
-      babyLesson.currentStep = steps.length - 1;
-
-      userReport.save();
+    /// autrement on va à une étape particulière
+    else {
+      var bblesson = userReport.getLatestBabyLessonSeen();
+      bblesson.currentStep = choice.choiceValue;
 
       resetState(PRENDRE_PHOTO_VIDEO);
 
-      displaySnackbar(_scaffoldKey, "Etape supprimée !", 2500);
+      userReport.save();
     }
+  }
 
-    /// sinon on indique a l'user qu'il peut supprimer
-    /// cette leçon en la swipant
-    else {
-      displaySnackbar(
-        _scaffoldKey,
-        "Pour supprimer le bébé leçon, swipe le horizontalement dans le menu de bébé leçons",
-        3500,
-      );
-    }
-  }*/
+  /* 
+              /// quand on appuie sur la poubelle,
+              /// on veut supprimer l'étape en cours de création
+              /// ainsi que le contenu multimédia associé
+              Future<void> supprimeEtapeActions(
+                  Report userReport, BuildContext context) async {
+                /// les étapes de la lecon
+                /// et l'index de l'étape a supprimer
+                var babyLesson = userReport.getLatestBabyLessonSeen();
+                var steps = babyLesson.steps;
+                var currentStep = babyLesson.currentStep;
+            
+                /// combien d'étapes existe t'il ?
+                var qtySteps = steps.length;
+            
+                /// si il y a plus d'une étape
+                /// on supprime l'etape actuelle
+                if (qtySteps > 1) {
+                  /// supprime le contenu photo/video/audio
+                  /// local de l'étape
+                  var step = babyLesson.getCurrentStep();
+                  var photoVideoPath = step.photoVideoFilePath;
+                  var audioPath = step.audioFilePath;
+                  
+                  await deleteLocalFile(photoVideoPath);
+                  await deleteLocalFile(audioPath);
+            
+                  /// supprime l'étape
+                  steps.removeAt(currentStep);
+            
+                  /// l'étape actuelle est la toute dernière étape
+                  babyLesson.currentStep = steps.length - 1;
+            
+                  userReport.save();
+            
+                  resetState(PRENDRE_PHOTO_VIDEO);
+            
+                  displaySnackbar(_scaffoldKey, "Etape supprimée !", 2500);
+                }
+            
+                /// sinon on indique a l'user qu'il peut supprimer
+                /// cette leçon en la swipant
+                else {
+                  displaySnackbar(
+                    _scaffoldKey,
+                    "Pour supprimer le bébé leçon, swipe le horizontalement dans le menu de bébé leçons",
+                    3500,
+                  );
+                }
+              }*/
 
   void noOutcomeChoice() {
     displaySnackbar(_scaffoldKey, "On reste ici pour l'instant !", 2500);
@@ -1879,5 +2098,25 @@ class _StepCreationState extends State<StepCreation>
   void uploadAlreadyGoingOn() {
     displaySnackbar(
         _scaffoldKey, "Un upload de fichier est déja en cours.", 2500);
+  }
+
+  /// Report BuildContext => List<Widget>
+  ///
+  /// affiche les icones du visionneur d'étapes
+  List<Widget> substepIconsForStepViewer(
+      Report userReport, BuildContext context) {
+    return [
+      playPauseIcon(userReport),
+      restartAudioIcon(userReport),
+    ];
+  }
+
+  /// Report => Widget
+  ///
+  /// Le contenu a afficher entre top et bottom bar,
+  /// en mode visionnage d'étape
+  Widget stepPanelForStepViewer(Report userReport) {
+    return prendrePhotoVideoPanel(userReport,
+        "Va en mode création/modif. d'étape, et prend une photo/vidéo.");
   }
 }

@@ -27,7 +27,7 @@ const NO_TEXT = null;
 /// howManySubsteps est la quantité
 /// de sous étapes à effectuer
 const howManySubsteps = 4;
-const lastStep = howManySubsteps - 1;
+const lastSubstep = howManySubsteps - 1;
 
 /// represente l'etape prendre une photo
 const PRENDRE_PHOTO_VIDEO = 0;
@@ -212,3 +212,12 @@ const UPLOAD_FAIL = 3;
 
 const REQUEST_SUCCESSFUL = 200;
 const REQUEST_FAILED = 404;
+
+
+const STEP_CREATION = -1;
+const STEP_VIEWER = -2;
+
+
+
+const WE_HAVE_PLAYED_AUDIO = true;
+const WE_HAVENT_PLAYED_AUDIO = false;

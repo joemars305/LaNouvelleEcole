@@ -324,6 +324,11 @@ class SoundPlayer {
   /// le player audio
   AudioPlayer audioPlayer = AudioPlayer();
 
+  
+
+  /// avons nous démarré un fichier audio ?
+  bool haveWePlayedSomething = NO_DATA;
+
   /// String Function => void
   ///
   /// lit un fichier audio situé:
@@ -334,6 +339,8 @@ class SoundPlayer {
       localPath,
       isLocal: true,
     );
+
+    haveWePlayedSomething = WE_HAVE_PLAYED_AUDIO;
 
     updateState();
 
@@ -349,6 +356,8 @@ class SoundPlayer {
       url,
       isLocal: false,
     );
+
+    haveWePlayedSomething = WE_HAVE_PLAYED_AUDIO;
 
     updateState();
 
@@ -370,7 +379,11 @@ class SoundPlayer {
   ///
   /// stop la lecture d'un fichier audio
   Future<void> stop(Function updateState) async {
+    
     await audioPlayer.stop();
+    await audioPlayer.release();
+
+    haveWePlayedSomething = WE_HAVENT_PLAYED_AUDIO;
 
     updateState();
 
@@ -399,15 +412,17 @@ class SoundPlayer {
   /// d'un fichier audio
   /// au début (0 sec)
   Future<void> restart(Function updateState) async {
-    var startPosition = Duration(milliseconds: 0);
+    if (!(audioPlayer.state == AudioPlayerState.STOPPED)) { 
+      var startPosition = Duration(milliseconds: 0);
 
-    await pause(() {});
+      await pause(() {});
 
-    await audioPlayer.seek(startPosition);
+      await audioPlayer.seek(startPosition);
 
-    await resume(() {});
+      await resume(() {});
 
-    updateState();
+      updateState();
+    }
 
     return NO_DATA;
   }
