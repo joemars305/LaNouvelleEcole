@@ -1,12 +1,6 @@
 /// - implémente le bouton poubelle d'effacage de lecon
 ///
-/// - fix le décalage qui survient lorsque on demarre un enregistrement
-/// et que un fichiier audio est en pause 
-/// (quand on resume, on veut le nouveau fichier audio enregisré)
-/// 
-/// - fix erreur qd on vient d'enregistrer fichier audio
-/// et qu'on appuie sur restart bouton
-/// 
+///
 /// - Ajoute une icone Boussole, a coté de Favoris.
 /// ce panneau est constitué de 2 panneau swipable left right:
 ///
@@ -787,7 +781,7 @@ class _StepCreationState extends State<StepCreation>
       if (choice == NO_FUTURE_CHOICE) {
         noStepChoice(choice);
       } else if (choice.choiceValue == SUPPRIME_ETAPE) {
-        ///await supprimeEtapeActions(userReport, context);
+        supprimeEtapeActions(userReport, context);
       } else if (choice.choiceValue == REMET_A_ZERO_ETAPE) {
         resetState(PRENDRE_PHOTO_VIDEO);
       } else {
@@ -1051,7 +1045,6 @@ class _StepCreationState extends State<StepCreation>
   }
 
   Future<void> restartAudioActions(Report userReport) async {
-
     /// si il existe un fichier audio
     /// a redemarrer
     if (audioPlayer.haveWePlayedSomething == WE_HAVE_PLAYED_AUDIO) {
@@ -1187,8 +1180,6 @@ class _StepCreationState extends State<StepCreation>
           _playerState = STOPPED;
         });
       });
-
-      
     }
 
     /// supprime le précédent fichier audio, si existant
@@ -1839,56 +1830,71 @@ class _StepCreationState extends State<StepCreation>
     }
   }
 
-  /* 
-              /// quand on appuie sur la poubelle,
-              /// on veut supprimer l'étape en cours de création
-              /// ainsi que le contenu multimédia associé
-              Future<void> supprimeEtapeActions(
-                  Report userReport, BuildContext context) async {
-                /// les étapes de la lecon
-                /// et l'index de l'étape a supprimer
-                var babyLesson = userReport.getLatestBabyLessonSeen();
-                var steps = babyLesson.steps;
-                var currentStep = babyLesson.currentStep;
-            
-                /// combien d'étapes existe t'il ?
-                var qtySteps = steps.length;
-            
-                /// si il y a plus d'une étape
-                /// on supprime l'etape actuelle
-                if (qtySteps > 1) {
-                  /// supprime le contenu photo/video/audio
-                  /// local de l'étape
-                  var step = babyLesson.getCurrentStep();
-                  var photoVideoPath = step.photoVideoFilePath;
-                  var audioPath = step.audioFilePath;
-                  
-                  await deleteLocalFile(photoVideoPath);
-                  await deleteLocalFile(audioPath);
-            
-                  /// supprime l'étape
-                  steps.removeAt(currentStep);
-            
-                  /// l'étape actuelle est la toute dernière étape
-                  babyLesson.currentStep = steps.length - 1;
-            
-                  userReport.save();
-            
-                  resetState(PRENDRE_PHOTO_VIDEO);
-            
-                  displaySnackbar(_scaffoldKey, "Etape supprimée !", 2500);
-                }
-            
-                /// sinon on indique a l'user qu'il peut supprimer
-                /// cette leçon en la swipant
-                else {
-                  displaySnackbar(
-                    _scaffoldKey,
-                    "Pour supprimer le bébé leçon, swipe le horizontalement dans le menu de bébé leçons",
-                    3500,
-                  );
-                }
-              }*/
+  /// Report BuildContext => void
+  ///
+  /// quand on appuie sur la poubelle,
+  /// on veut supprimer l'étape en cours de création
+  /// parmi la liste d'étapes du bébé leçon,
+  /// ainsi que le contenu photo/video et audio
+  /// associé
+  Future<void> supprimeEtapeActions(
+      Report userReport, BuildContext context) async {
+    /// les étapes de la lecon
+    /// et l'index de l'étape a supprimer
+    var babyLesson = userReport.getLatestBabyLessonSeen();
+    var steps = babyLesson.steps;
+    int currentStep = babyLesson.currentStep;
+
+    /// combien d'étapes existe t'il ?
+    var qtySteps = steps.length;
+
+    /// si il y a plus d'une étape
+    /// on supprime l'etape actuelle
+    if (qtySteps > 1) {
+      if (sousEtape == MSG_AUDIO) {
+        /// arrête les éventuels enregistrements 
+        /// audio ou lecture audio
+        /// en cours
+        stopRecordingAndSave(userReport);
+        audioPlayer.stop(() {
+          setState(() {
+            _playerState = STOPPED;
+          });
+        });
+      }
+
+      /// supprime le contenu photo/video/audio
+      /// local de l'étape
+      LessonStep step = babyLesson.getCurrentStep();
+      var photoVideoPath = step.photoVideoFilePath;
+      var audioPath = step.audioFilePath;
+
+      await fileManager.deleteFile(photoVideoPath, NO_DATA, () {});
+      await fileManager.deleteFile(audioPath, NO_DATA, () {});
+
+      /// supprime l'étape
+      steps.removeAt(currentStep);
+
+      /// l'étape actuelle est la toute dernière étape
+      babyLesson.currentStep = steps.length - 1;
+
+      userReport.save();
+
+      resetState(PRENDRE_PHOTO_VIDEO);
+
+      displaySnackbar(_scaffoldKey, "Etape supprimée !", 2500);
+    }
+
+    /// sinon on indique a l'user qu'il peut supprimer
+    /// cette leçon en la swipant
+    else {
+      displaySnackbar(
+        _scaffoldKey,
+        "Pour supprimer le bébé leçon, swipe le horizontalement dans le menu de bébé leçons",
+        3500,
+      );
+    }
+  }
 
   void noOutcomeChoice() {
     displaySnackbar(_scaffoldKey, "On reste ici pour l'instant !", 2500);
