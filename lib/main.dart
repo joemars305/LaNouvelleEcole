@@ -48,6 +48,7 @@ class MyApp extends StatelessWidget {
           '/step_creation': (context) => StepCreation(),
           '/pick_video': (context) => PickPhotoVideo(),
           '/lesson_viewer': (context) => LessonViewer(),
+          '/boussole': (context) => Boussole(),
         },
 
         // Les différents styles dispos

@@ -217,6 +217,9 @@ const REQUEST_FAILED = 404;
 const STEP_CREATION = -1;
 const STEP_VIEWER = -2;
 
+const THINGS_TO_DO = 0;
+const MAP = 1;
+
 
 
 const WE_HAVE_PLAYED_AUDIO = true;

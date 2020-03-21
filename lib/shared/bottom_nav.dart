@@ -15,6 +15,9 @@ class AppBottomNav extends StatelessWidget {
             icon: Icon(FontAwesomeIcons.heart, size: 20),
             title: Text('Favoris', style: bottomText,)),
         BottomNavigationBarItem(
+            icon: Icon(FontAwesomeIcons.compass, size: 20),
+            title: Text('Boussole', style: bottomText,)),
+        BottomNavigationBarItem(
             icon: Icon(FontAwesomeIcons.babyCarriage, size: 20),
             title: Text('Bébé leçons', style: bottomText,)),
       ].toList(),
@@ -28,6 +31,9 @@ class AppBottomNav extends StatelessWidget {
             Navigator.pushNamed(context, '/favorites');
             break;
           case 2:
+            Navigator.pushNamed(context, '/boussole');
+            break;
+          case 3:
             Navigator.pushNamed(context, '/baby_lessons');
             break;
         }

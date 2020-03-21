@@ -1,6 +1,4 @@
-/// - implémente le bouton poubelle d'effacage de lecon
-///
-///
+
 /// - Ajoute une icone Boussole, a coté de Favoris.
 /// ce panneau est constitué de 2 panneau swipable left right:
 ///
@@ -54,8 +52,7 @@ class StepCreation extends StatefulWidget {
   createState() => _StepCreationState();
 }
 
-class _StepCreationState extends State<StepCreation>
-    with TickerProviderStateMixin {
+class _StepCreationState extends State<StepCreation> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<Report>(

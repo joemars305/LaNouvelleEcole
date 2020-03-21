@@ -86,13 +86,18 @@ class Report {
   List<BabyLesson> babyLessons;
   Map topics;
   int latestBabyLessonSeen;
+  List<NoteToFutureSelf> notesToFutureSelf;
 
   Report(
-      {this.uid,
+    {
+      this.uid,
       this.total,
       this.babyLessons,
       this.topics,
-      this.latestBabyLessonSeen});
+      this.latestBabyLessonSeen,
+      this.notesToFutureSelf,
+    }
+  );
 
   factory Report.fromMap(Map data) {
     return Report(
@@ -101,6 +106,9 @@ class Report {
       babyLessons: (data['babyLessons'] as List ?? [])
           .map((v) => BabyLesson.fromMap(v))
           .toList(),
+      notesToFutureSelf: (data['notesToFutureSelf'] as List ?? [])
+          .map((v) => NoteToFutureSelf.fromMap(v))
+          .toList(),    
       topics: data['topics'] ?? {},
       latestBabyLessonSeen: data['latestBabyLessonSeen'] ?? 0,
     );
@@ -121,6 +129,7 @@ class Report {
       'babyLessons': (babyLessons ?? []).map((v) => v.toMap()).toList(),
       'topics': topics ?? {},
       'latestBabyLessonSeen': latestBabyLessonSeen ?? 0,
+      'notesToFutureSelf': (notesToFutureSelf ?? []).map((v) => v.toMap()).toList(),
     };
   }
 
@@ -290,6 +299,32 @@ class Item {
 
   factory Item.fromMap(Map data) {
     return Item(
+      name: data['name'],
+      qty: data['qty'],
+      //items: (data['items'] as List ?? []).map((v) => Item.fromMap(v)).toList(),
+    );
+  }
+
+  Map toMap() {
+    return {
+      'name': name ?? '',
+      'qty': qty ?? 0,
+      //'items': (items ?? []).map((v) => v.toMap()).toList(),
+    };
+  }
+}
+
+
+class NoteToFutureSelf {
+  String name;
+  int qty;
+  //List<Item> items;
+
+  NoteToFutureSelf({ this.name, this.qty, /*this.items*/ });
+
+
+  factory NoteToFutureSelf.fromMap(Map data) {
+    return NoteToFutureSelf(
       name: data['name'],
       qty: data['qty'],
       //items: (data['items'] as List ?? []).map((v) => Item.fromMap(v)).toList(),
