@@ -27,6 +27,11 @@
 ///
 /// - ajoute portrait/paysage
 ///
+/// - crée des dossiers 
+/// 'bebe_lecons/nom_lecon/etape_x/fichier.ext'
+/// lorsque on stocke des photo/video/audio
+/// pour les étapes
+/// 
 /// - implemente une fonctionnalité permettant de télécharger l'ensemble du contenu
 /// photo/audio/vidéo d'une leçon, via bluetooth ou autre moyen
 /// (zippé de préference)

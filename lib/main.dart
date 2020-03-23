@@ -7,14 +7,22 @@ import 'screens/screens.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-
 void main() {
+  //notifier.initialize
   initializeDateFormatting().then((_) => runApp(MyApp()));
 }
 
+
+
 class MyApp extends StatelessWidget {
+  //Notifier notifier;
+
+  
+
   @override
-  Widget build(BuildContext context) {  
+  Widget build(BuildContext context) {
+    //notifier.showNotificationWithDefaultSound();
+     
     /* La librairie Provider nous permet d'avoir accès 
     au données de l'user partout dans notre application,
     grâce au MultiProvider, wrapped autour de MaterialApp.

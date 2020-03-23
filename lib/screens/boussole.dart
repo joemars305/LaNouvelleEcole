@@ -673,6 +673,7 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
       } else {
         displaySnackbar(_scaffoldKey,
             "Oups. Il nous faut une intervale d'une minute ou plus !", 3000);
+        intervalXMinutes(noteToFutureSelf, userReport);
       }
     } else {
       cPasUnNombre();
@@ -708,6 +709,7 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
       } else {
         displaySnackbar(_scaffoldKey,
             "Oups. Il nous faut une intervale d'une heure ou plus !", 3000);
+        intervalXHeures(noteToFutureSelf, userReport);
       }
     } else {
       cPasUnNombre();
@@ -747,6 +749,7 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
       } else {
         displaySnackbar(_scaffoldKey,
             "Oups. Il nous faut une intervale d'une heure ou plus !", 3000);
+        intervalXJours(noteToFutureSelf, userReport);
       }
     } else {
       cPasUnNombre();
