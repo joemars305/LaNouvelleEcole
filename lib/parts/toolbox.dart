@@ -9,7 +9,6 @@ import 'package:quizapp/parts/parts.dart';
 import 'package:quizapp/services/models.dart';
 import 'package:file/local.dart';
 import 'package:path/path.dart';
-//import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// String => bool
 ///
@@ -672,78 +671,4 @@ class FileManager {
 
 }
 
-/// nous permet de créer/modifier/supprimer
-/// des notifications
-/*class Notifier {
-  /// contient ce qu'il nous
-  /// faut pr diffuser des notifs
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
-  /// .. => ..
-  ///
-  /// constructeur, construit un notifier
-  Notifier();
-
-  /// BuildContext => void
-  ///
-  /// get the ball rolling
-  void initializeNotifier(BuildContext context) {
-    // initialise the plugin. app_icon needs to be a added as a drawable resource to the Android head project
-    // If you have skipped STEP 3 then change app_icon to @mipmap/ic_launcher
-    var initializationSettingsAndroid =
-        new AndroidInitializationSettings('app_icon');
-    var initializationSettingsIOS = new IOSInitializationSettings();
-    var initializationSettings = new InitializationSettings(
-        initializationSettingsAndroid, initializationSettingsIOS);
-    flutterLocalNotificationsPlugin = new FlutterLocalNotificationsPlugin();
-
-    /// onSelectNotification is responsible
-    /// for the action which is going to be
-    /// happen when we will click on the
-    /// Notification. This method must
-    /// return Future and this method
-    /// must have a string parameter
-    /// which will be payload.
-    flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onSelectNotification: (String payload) {
-        return _onSelectNotification(context, payload);
-      },
-    );
-  }
-
-  Future _onSelectNotification(BuildContext context, String payload) async {
-    showDialog(
-      context: context,
-      builder: (_) {
-        return new AlertDialog(
-          title: Text("PayLoad"),
-          content: Text("Payload : $payload"),
-        );
-      },
-    );
-  }
-
-  /// .. => ..
-  ///
-  /// Affiche une notif à l'écran
-  Future showNotificationWithDefaultSound() async {
-    var androidPlatformChannelSpecifics = new AndroidNotificationDetails(
-        'your channel id', 'your channel name', 'your channel description',
-        importance: Importance.Max, priority: Priority.High);
-    var iOSPlatformChannelSpecifics = new IOSNotificationDetails();
-    var platformChannelSpecifics = new NotificationDetails(
-        androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      'New Post',
-      'How to Show Notification in Flutter',
-      platformChannelSpecifics,
-      payload: 'Default_Sound',
-    );
-  }
-
-  /// .. => ..
-  ///
-  ///
-}*/

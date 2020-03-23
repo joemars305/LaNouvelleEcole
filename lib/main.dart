@@ -8,21 +8,14 @@ import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() {
-  //notifier.initialize
   initializeDateFormatting().then((_) => runApp(MyApp()));
 }
 
-
-
 class MyApp extends StatelessWidget {
-  //Notifier notifier;
-
-  
-
   @override
   Widget build(BuildContext context) {
-    //notifier.showNotificationWithDefaultSound();
-     
+    
+
     /* La librairie Provider nous permet d'avoir accès 
     au données de l'user partout dans notre application,
     grâce au MultiProvider, wrapped autour de MaterialApp.
@@ -40,7 +33,7 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        debugShowCheckedModeBanner:  false,
+        debugShowCheckedModeBanner: false,
         // Firebase Analytics
         navigatorObservers: [
           FirebaseAnalyticsObserver(analytics: FirebaseAnalytics()),
@@ -77,17 +70,16 @@ class MyApp extends StatelessWidget {
             // est body1
             body1: TextStyle(fontSize: 22),
 
-            
             //body2: TextStyle(fontSize: 16),
 
             // le style du texte d'un bouton
             button: TextStyle(letterSpacing: 1.5, fontWeight: FontWeight.bold),
-            
+
             // met le texte en gras
             headline: TextStyle(fontWeight: FontWeight.bold),
 
-            // utile pour différencier 
-            // deux textes , 
+            // utile pour différencier
+            // deux textes ,
             // en appliquant une couleur différente
             subhead: TextStyle(color: Colors.grey),
           ),
