@@ -778,5 +778,8 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
         _scaffoldKey, "Chose à faire sauvegardée avec succès !", 2500);
   }
 
-  void cPasUnNombre() {}
+  void cPasUnNombre() {
+    displaySnackbar(
+        _scaffoldKey, "Il faut écrire un nombre entier supérieur ou égal à 1", 2500);
+  }
 }
