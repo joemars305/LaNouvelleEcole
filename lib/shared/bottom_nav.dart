@@ -11,9 +11,9 @@ class AppBottomNav extends StatelessWidget {
         BottomNavigationBarItem(
             icon: Icon(FontAwesomeIcons.graduationCap, size: 20),
             title: Text('Leçons', style: bottomText,)),
-        BottomNavigationBarItem(
+        /*BottomNavigationBarItem(
             icon: Icon(FontAwesomeIcons.heart, size: 20),
-            title: Text('Favoris', style: bottomText,)),
+            title: Text('Favoris', style: bottomText,)),*/
         BottomNavigationBarItem(
             icon: Icon(FontAwesomeIcons.compass, size: 20),
             title: Text('Boussole', style: bottomText,)),
@@ -27,13 +27,13 @@ class AppBottomNav extends StatelessWidget {
           case 0:
             // do nuttin
             break;
-          case 1:
+          /*case 1:
             Navigator.pushNamed(context, '/favorites');
-            break;
-          case 2:
+            break;*/
+          case 1:
             Navigator.pushNamed(context, '/boussole');
             break;
-          case 3:
+          case 2:
             Navigator.pushNamed(context, '/baby_lessons');
             break;
         }

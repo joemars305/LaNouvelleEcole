@@ -10,6 +10,17 @@ import 'package:quizapp/services/models.dart';
 import 'package:file/local.dart';
 import 'package:path/path.dart';
 
+/// String => bool
+/// 
+/// Essaie de convertir un String en int
+/// et retourne si ou ou non la 
+/// conversion est réussie
+bool stringIsValidInt(String input) {
+  int tryInput = int.tryParse(input);
+
+  return tryInput != NO_DATA;
+}
+
 /// USER_INPUT_STRING représente
 /// un futur texte provenant
 /// de l'utilisateur
@@ -19,36 +30,37 @@ import 'package:path/path.dart';
 /// Future<un String d'une lettre ou plus> pour le reste
 
 /*
-Future<String> userInput = getUserInput(
-  context,
-  title,
-  subtitle, 
-  hint,
-);
+handleUserInput() async {
+  String userInput = await getUserInput(
+    context,
+    title,
+    subtitle, 
+    hint,
+  );
 
-fnForFutureUserInput(userInput);
-
+  fnForFutureUserInput(userInput);
+}
 ....
 ....
 
-void fnForFutureUserInput(Future<String> userInput) {
-  userInput.then((userInput) {
-    if (userInput == NO_USER_INPUT) {
-      return noUserInput();
-    }
+void fnForFutureUserInput(String userInput) {
+  
+  if (userInput == NO_USER_INPUT) {
+    return noUserInput();
+  }
 
-    else if (userInput == EMPTY_USER_INPUT) {
-      return emptyUserInput();
-    }
+  else if (userInput == EMPTY_USER_INPUT) {
+    return emptyUserInput();
+  }
 
-    else if (userInput.length > 0) {
-      return fnForInput();
-    }
+  else if (userInput.length > 0) {
+    return fnForInput();
+  }
 
-    else {
-      throw Error();
-    }
-  });
+  else {
+    throw Error();
+  }
+  
 }
 */
 
@@ -144,8 +156,8 @@ void displaySnackbar(
 /// Future<Choice> autrement
 
 /*
-fnActions() {
-  Future<Choice> userChoice = getUserChoice(
+fnActions() async {
+  Choice userChoice = await getUserChoice(
     context,
     title,
     choices,
@@ -156,16 +168,18 @@ fnActions() {
 
 
 
-void fnForFutureChoice(Future<Choice> futureChoice) {
-  futureChoice.then((choice) {
-    if (choice == NO_FUTURE_CHOICE) {
-      return noChoice();
-    }
-
-    else {
-      return doSomethingWChoice();
-    }
-  });
+void fnForFutureChoice(Choice choice) {
+  
+  if (choice == NO_FUTURE_CHOICE) {
+    return noChoice();
+  }
+  else if (choice.choiceValue == QQCH) {
+    return doSomethingWChoice();
+  }
+  else {
+    throw Error();
+  }
+  
 }
 */
 
@@ -324,8 +338,6 @@ class SoundPlayer {
   /// le player audio
   AudioPlayer audioPlayer = AudioPlayer();
 
-  
-
   /// avons nous démarré un fichier audio ?
   bool haveWePlayedSomething = NO_DATA;
 
@@ -379,7 +391,6 @@ class SoundPlayer {
   ///
   /// stop la lecture d'un fichier audio
   Future<void> stop(Function updateState) async {
-    
     await audioPlayer.stop();
     await audioPlayer.release();
 
@@ -412,7 +423,7 @@ class SoundPlayer {
   /// d'un fichier audio
   /// au début (0 sec)
   Future<void> restart(Function updateState) async {
-    if (!(audioPlayer.state == AudioPlayerState.STOPPED)) { 
+    if (!(audioPlayer.state == AudioPlayerState.STOPPED)) {
       var startPosition = Duration(milliseconds: 0);
 
       await pause(() {});
@@ -444,19 +455,17 @@ class SoundPlayer {
 /// de l'audio provenant
 /// du microphone de l'utilisateur,
 class SoundRecorder {
-
-  /// un objet contenant des données relatives 
+  /// un objet contenant des données relatives
   /// au dernier enregistrement local
   Recording recording = NO_DATA;
-
- 
 
   /// String String Function => void
   ///
   /// demarre un enregistrement
   /// audio via microphone,
   /// stocké localement
-  Future<void> startRecording(String dirPath, String fileName, Function updateState) async {
+  Future<void> startRecording(
+      String dirPath, String fileName, Function updateState) async {
     try {
       /// demande la permission à l'user de pouvoir
       /// utiliser son microphone, et son stockage
@@ -485,7 +494,7 @@ class SoundRecorder {
       } else {
         print("Pas de permissions, ou enregistrement audio déja en cours..");
       }
-    }  catch (e) {
+    } catch (e) {
       print("oups: L'erreur suivante à été reçue suite à une tentnt audio: $e");
     }
 
@@ -493,7 +502,6 @@ class SoundRecorder {
   }
 
   Future isRecording() async => (await AudioRecorder.isRecording);
-
 
   _requestMicAndStoragePermissions() async {
     await PermissionHandler().requestPermissions([
@@ -549,7 +557,7 @@ class PhotoVideoRecorder {
   /// Prend une photo via la caméra,
   /// (ou via Gallery si 2nd argument existe && true)
   /// et retourne le fichier
-  /// 
+  ///
   Future<File> takePhoto(Function updateState, [bool pickFromGallery]) async {
     var fromWhere = ImageSource.camera;
 
@@ -647,7 +655,6 @@ class FileManager {
 
     // copy the file to a new path
     File newLocalImage = await file.copy(localfilePath);
-
 
     print("local file path: $localfilePath");
 

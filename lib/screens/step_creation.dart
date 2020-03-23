@@ -1,7 +1,6 @@
 
-/// - Ajoute une icone Boussole, a coté de Favoris.
-/// ce panneau est constitué de 2 panneau swipable left right:
-///
+
+
 /// - un panneau Agenda, affichant une liste des 'choses a faire',
 /// pour chaque jour, nous permettant de créer/modifier/annuler
 /// des 'choses a faire' a un moment donné, a un jour donné.
@@ -28,6 +27,10 @@
 ///
 /// - ajoute portrait/paysage
 ///
+/// - implemente une fonctionnalité permettant de télécharger l'ensemble du contenu
+/// photo/audio/vidéo d'une leçon, via bluetooth ou autre moyen
+/// (zippé de préference)
+/// 
 /// - implémente l'upload du contenu et la finalisation de la leçon
 import 'dart:io';
 import 'dart:ui';
@@ -414,104 +417,6 @@ class _StepCreationState extends State<StepCreation> {
     return centeredMsg(
         "assets/icon.png", "Enregistrement audio en cours...", Colors.pink);
   }
-
-  /*/// une compte à rebours circulaire
-        Widget circularCountdown() {
-          return Container(
-            color: Colors.orange,
-            child: Padding(
-              padding: EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  bigCircleAndText(),
-                ],
-              ),
-            ),
-          );
-        }
-      
-        /// le gros cercle et le texte
-        Widget bigCircleAndText() {
-          return Expanded(
-            child: Align(
-              alignment: FractionalOffset.center,
-              child: AspectRatio(
-                  aspectRatio: 1.0,
-                  child: Stack(
-                    children: <Widget>[
-                      bigCircle(),
-                      txtInsideBigCircle(),
-                    ],
-                  )),
-            ),
-          );
-        }
-      
-        /// le gros cercle
-        Widget bigCircle() {
-          return Positioned.fill(
-            child: AnimatedBuilder(
-              animation: controller,
-              builder: (BuildContext context, Widget child) {
-                /// arrete l'enregistrement audio si l'animation est finie
-                stopRecordWhenNecessary();
-                return new CustomPaint(
-                  painter: TimerPainter(
-                    color: Colors.pink,
-                    backgroundColor: Colors.white,
-                    animation: controller,
-                  ),
-                );
-              },
-            ),
-          );
-        }
-      
-        /// arrete l'enregistrement audio si l'animation est finie
-        void stopRecordWhenNecessary() {
-          if (controller.value == END_ANIM) {
-            endAnim();
-          }
-        }
-      
-        /// arrete l'enregistrement audio en cours
-        void endAnim() {
-          audioRecorder.stopRecording(() {
-            setState(() {
-              _isRecording = NO_RECORD;
-            });
-          });
-        }
-      
-        /// le texte dans le gros cercle
-        Widget txtInsideBigCircle() {
-          return Align(
-            alignment: FractionalOffset.center,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  'Vas-y, parle...',
-                ),
-      
-                /// le compte a rebours numérique (mm:ss)
-                AnimatedBuilder(
-                  animation: controller,
-                  builder: (BuildContext context, Widget child) {
-                    return new Text(
-                      timerString,
-                      style: TextStyle(
-                        fontSize: 45,
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          );
-        }*/
 
   Widget uploadFilesPanel(Report userReport) {
     if (photoVideoUploadStatus == NOT_UPLOADED) {

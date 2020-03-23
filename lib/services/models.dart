@@ -314,19 +314,46 @@ class Item {
   }
 }
 
-
+/// représente une chose à faire a un moment donnée dans le futur
 class NoteToFutureSelf {
+  /// décris la tache
   String name;
-  int qty;
+
+
+  int year;
+
+  int month;
+
+  int day;
+
+  int hour;
+
+  int minute;
+
+  int second;
+
+  int combienDeFois;
+
+  int uniteDeTemps;
+
+  int intervaleEntreNotifs;
+
   //List<Item> items;
 
-  NoteToFutureSelf({ this.name, this.qty, /*this.items*/ });
+  NoteToFutureSelf({ this.name, this.combienDeFois, this.uniteDeTemps, this.intervaleEntreNotifs, this.year, this.month, this.day, this.hour, this.minute, this.second /*this.items*/ });
 
 
   factory NoteToFutureSelf.fromMap(Map data) {
     return NoteToFutureSelf(
       name: data['name'],
-      qty: data['qty'],
+      year: data['year'],
+      month: data['month'],
+      day: data['day'],
+      hour: data['hour'],
+      minute: data['minute'],
+      second: data['second'],
+      intervaleEntreNotifs: data['intervaleEntreNotifs'],
+      uniteDeTemps: data['uniteDeTemps'],
       //items: (data['items'] as List ?? []).map((v) => Item.fromMap(v)).toList(),
     );
   }
@@ -334,7 +361,14 @@ class NoteToFutureSelf {
   Map toMap() {
     return {
       'name': name ?? '',
-      'qty': qty ?? 0,
+      'intervaleEntreNotifs': intervaleEntreNotifs,
+      'year': year,
+      'month': month,
+      'day': day,
+      'hour': hour,
+      'minute': minute,
+      'second': second,
+      'uniteDeTemps': uniteDeTemps,
       //'items': (items ?? []).map((v) => v.toMap()).toList(),
     };
   }

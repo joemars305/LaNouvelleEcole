@@ -219,8 +219,24 @@ const STEP_VIEWER = -2;
 
 const THINGS_TO_DO = 0;
 const MAP = 1;
+const CREATE_THING_TO_DO = 2;
 
 
 
 const WE_HAVE_PLAYED_AUDIO = true;
 const WE_HAVENT_PLAYED_AUDIO = false;
+
+
+const UNE_SEULE_FOIS = 0;
+const PLUSIEURS_FOIS = 1;
+
+const INTERVAL_X_MINUTES = 0;
+const INTERVAL_X_HEURES = 1;
+const INTERVAL_QUOTIDIEN = 2;
+const INTERVAL_X_JOURS = 3;
+const INTERVAL_HEBDO = 4;
+
+const UNITE_MINUTES = 0;
+const UNITE_HEURES = 1;
+const UNITE_JOURS = 2;
+
