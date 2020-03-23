@@ -402,14 +402,15 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
       "Fais 50 burpees.",
     );
 
-    fnForOnFaitQuoi(onFaitQuoi, userReport);
+    fnForOnFaitQuoi(onFaitQuoi, userReport, dayChosen);
   }
 
-  void fnForOnFaitQuoi(String userInput, Report userReport) {
+  void fnForOnFaitQuoi(String userInput, Report userReport, DateTime dayChosen) {
     if (userInput == NO_USER_INPUT) {
       yaRienAFaire(userReport);
     } else if (userInput == EMPTY_USER_INPUT) {
       cVide();
+      addThingToDo(userReport, dayChosen);
     }
 
     /// si l'user à écrit une description de ce qu'il veut faire,
@@ -662,21 +663,25 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
       yaRienAFaire(userReport);
     } else if (userInput == EMPTY_USER_INPUT) {
       cVide();
+      intervalXMinutes(noteToFutureSelf, userReport);
     } else if (stringIsValidInt(userInput)) {
       int qtyMin = int.tryParse(userInput);
 
       if (qtyMin > 0) {
-        saveIntervalAndTimeUnit(qtyMin, UNITE_MINUTES, noteToFutureSelf, userReport);
+        saveIntervalAndTimeUnit(
+            qtyMin, UNITE_MINUTES, noteToFutureSelf, userReport);
       } else {
         displaySnackbar(_scaffoldKey,
             "Oups. Il nous faut une intervale d'une minute ou plus !", 3000);
       }
     } else {
-      throw Error();
+      cPasUnNombre();
+      intervalXMinutes(noteToFutureSelf, userReport);
     }
   }
 
-  Future<void> intervalXHeures(NoteToFutureSelf noteToFutureSelf, Report userReport) async {
+  Future<void> intervalXHeures(
+      NoteToFutureSelf noteToFutureSelf, Report userReport) async {
     String userInput = await getUserInput(
       context,
       "Toutes les combien d'heures ?",
@@ -687,22 +692,26 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
     fnForXHeures(noteToFutureSelf, userInput, userReport);
   }
 
-  void fnForXHeures( NoteToFutureSelf noteToFutureSelf, String userInput, Report userReport) {
+  void fnForXHeures(
+      NoteToFutureSelf noteToFutureSelf, String userInput, Report userReport) {
     if (userInput == NO_USER_INPUT) {
       yaRienAFaire(userReport);
     } else if (userInput == EMPTY_USER_INPUT) {
       cVide();
+      intervalXHeures(noteToFutureSelf, userReport);
     } else if (stringIsValidInt(userInput)) {
       int qtyHeures = int.tryParse(userInput);
 
       if (qtyHeures > 0) {
-        saveIntervalAndTimeUnit(qtyHeures, UNITE_HEURES, noteToFutureSelf, userReport);
+        saveIntervalAndTimeUnit(
+            qtyHeures, UNITE_HEURES, noteToFutureSelf, userReport);
       } else {
         displaySnackbar(_scaffoldKey,
             "Oups. Il nous faut une intervale d'une heure ou plus !", 3000);
       }
     } else {
-      throw Error();
+      cPasUnNombre();
+      intervalXHeures(noteToFutureSelf, userReport);
     }
   }
 
@@ -710,7 +719,8 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
     saveIntervalAndTimeUnit(1, UNITE_JOURS, noteToFutureSelf, userReport);
   }
 
-  Future<void> intervalXJours(NoteToFutureSelf noteToFutureSelf, Report userReport) async {
+  Future<void> intervalXJours(
+      NoteToFutureSelf noteToFutureSelf, Report userReport) async {
     String userInput = await getUserInput(
       context,
       "Tous les combien de jours ?",
@@ -721,22 +731,26 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
     fnForXJours(noteToFutureSelf, userInput, userReport);
   }
 
-  void fnForXJours( NoteToFutureSelf noteToFutureSelf, String userInput, Report userReport) {
+  void fnForXJours(
+      NoteToFutureSelf noteToFutureSelf, String userInput, Report userReport) {
     if (userInput == NO_USER_INPUT) {
       yaRienAFaire(userReport);
     } else if (userInput == EMPTY_USER_INPUT) {
       cVide();
+      intervalXJours(noteToFutureSelf, userReport);
     } else if (stringIsValidInt(userInput)) {
       int qtyJours = int.tryParse(userInput);
 
       if (qtyJours > 0) {
-        saveIntervalAndTimeUnit(qtyJours, UNITE_JOURS, noteToFutureSelf, userReport);
+        saveIntervalAndTimeUnit(
+            qtyJours, UNITE_JOURS, noteToFutureSelf, userReport);
       } else {
         displaySnackbar(_scaffoldKey,
             "Oups. Il nous faut une intervale d'une heure ou plus !", 3000);
       }
     } else {
-      throw Error();
+      cPasUnNombre();
+      intervalXJours(noteToFutureSelf, userReport);
     }
   }
 
@@ -745,13 +759,14 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
   }
 
   /// int int Report => void
-  /// 
-  /// sauvegarde la description, l'heure, 
+  ///
+  /// sauvegarde la description, l'heure,
   /// le jour et l'année, la fréquence de répétition,
   /// la longueur de l'intervalle entre chaque notif,
   /// et l'unité de temps utilisée pour chaque intervale,
   /// dans la base de données utilisateur
-  void saveIntervalAndTimeUnit(int qtyTempsIntervale, int uniteTempsIntervale, NoteToFutureSelf noteToFutureSelf, Report userReport) {
+  void saveIntervalAndTimeUnit(int qtyTempsIntervale, int uniteTempsIntervale,
+      NoteToFutureSelf noteToFutureSelf, Report userReport) {
     noteToFutureSelf.intervaleEntreNotifs = qtyTempsIntervale;
     noteToFutureSelf.uniteDeTemps = uniteTempsIntervale;
 
@@ -759,6 +774,9 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
 
     userReport.save();
 
-    displaySnackbar(_scaffoldKey, "Chose à faire sauvegardée avec succès !", 2500);
+    displaySnackbar(
+        _scaffoldKey, "Chose à faire sauvegardée avec succès !", 2500);
   }
+
+  void cPasUnNombre() {}
 }
