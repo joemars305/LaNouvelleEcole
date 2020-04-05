@@ -1,8 +1,14 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:quizapp/parts/parts.dart';
 import 'package:quizapp/services/services.dart';
 
+=======
+import 'package:quizapp/parts/consts.dart';
+import 'package:quizapp/services/models.dart';
+import 'package:quizapp/shared/photo_canvas.dart';
+>>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 
 class LessonViewer extends StatefulWidget {
   LessonViewer({Key key}) : super(key: key);

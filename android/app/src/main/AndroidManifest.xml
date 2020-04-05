@@ -57,7 +57,10 @@
     <!-- Permissions options for the `access_media_location` group -->
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
     <application
         android:name="io.flutter.app.FlutterApplication"
         android:label="J'❤️ L'école"
