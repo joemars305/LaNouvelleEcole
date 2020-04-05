@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "432136122071",
+    "firebase_url": "https://lanouvelleecole-69dba.firebaseio.com",
+    "project_id": "lanouvelleecole-69dba",
+    "storage_bucket": "lanouvelleecole-69dba.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:432136122071:android:b2ccc060a3e10eb159ca92",
+        "android_client_info": {
+          "package_name": "io.fireship.lanouvelleecole"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "432136122071-kcmnm6rncu1ua3rsklapaodb9i3l083l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.fireship.lanouvelleecole",
+            "certificate_hash": "1368ee7a2b3fc46acd8c988f790e3d92e9d2b019"
+          }
+        },
+        {
+          "client_id": "432136122071-jlhmqg4e2b33mfakvgpghk3l3tkllp7d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCV_5WO1zuJE9_T5svzk2Z7lCJLJG2kc8U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "432136122071-jlhmqg4e2b33mfakvgpghk3l3tkllp7d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
