@@ -79,7 +79,7 @@ class LoginScreenState extends State<LoginScreen> {
              * le texte descriptif 
              * */
             Text(
-              "Ici commence l'école du futur. L'école qui apprend à chaque citoyen, de 7 à 77 ans, à subvenir à ses besoins vitaux.",
+              "Ici commence l'école du futur... l'école qui apprend à chaque citoyen, de 7 à 77 ans, à subvenir à ses besoins vitaux.",
               style: TextStyle(fontFamily: 'ComingSoon'),
               textAlign: TextAlign.center,
             ),
