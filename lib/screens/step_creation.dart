@@ -1,16 +1,6 @@
 
 
 
-<<<<<<< HEAD
-=======
-/// - un panneau Agenda, affichant une liste des 'choses a faire',
-/// pour chaque jour, nous permettant de créer/modifier/annuler
-/// des 'choses a faire' a un moment donné, a un jour donné.
-///
-/// - un panneau Carte, qui affiche une carte Google Maps
-/// centrée sur la position actuelle, et possibilité de rajouter des
-/// des marqueurs avec un nom et un type.
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 ///
 /// - dans lesson_viewer, crée une icone topbar shopping,
 /// qui affiche un panel similaire a l'inventaire,
@@ -44,22 +34,11 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-<<<<<<< HEAD
 import 'package:quizapp/services/services.dart';
 import 'package:quizapp/parts/parts.dart';
 import 'package:file/local.dart';
 import 'package:path_provider/path_provider.dart';
 
-=======
-import 'package:quizapp/parts/parts.dart';
-import 'package:quizapp/services/services.dart';
-import 'package:quizapp/shared/photo_canvas.dart';
-import 'package:file/local.dart';
-import 'package:path_provider/path_provider.dart';
-
-import '../parts/consts.dart';
-import '../parts/parts.dart';
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 
 /// Widget to capture and crop the image
 class StepCreation extends StatefulWidget {
@@ -157,13 +136,8 @@ class _StepCreationState extends State<StepCreation> {
     print('allez hop on ferme boutique.');
 
     audioPlayer.stop(() {});
-<<<<<<< HEAD
     audioRecorder.dispose();
     
-=======
-    audioRecorder.stopRecording(() {});
-
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
     super.dispose();
   }
 
@@ -2046,10 +2020,6 @@ class _StepCreationState extends State<StepCreation> {
   /// en mode visionnage d'étape
   Widget stepPanelForStepViewer(Report userReport) {
     return prendrePhotoVideoPanel(userReport,
-<<<<<<< HEAD
         "Pas de photo dispo pour cette étape");
-=======
-        "Va en mode création/modif. d'étape, et prend une photo/vidéo.");
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
   }
 }

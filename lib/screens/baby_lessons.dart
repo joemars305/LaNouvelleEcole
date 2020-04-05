@@ -4,11 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:quizapp/parts/toolbox.dart';
 import '../services/services.dart';
-<<<<<<< HEAD
 import '../parts/parts.dart';
-=======
-import '../shared/shared.dart';
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 
 // l'écran affichant toutes les
 // leçons en cours de création

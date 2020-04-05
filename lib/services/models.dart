@@ -342,12 +342,9 @@ class NoteToFutureSelf {
 
   NoteToFutureSelf({ this.name, this.combienDeFois, this.uniteDeTemps, this.intervaleEntreNotifs, this.year, this.month, this.day, this.hour, this.minute, this.second /*this.items*/ });
 
-<<<<<<< HEAD
   DateTime getTimeOfAction() {
     return DateTime(year, month, day, hour, minute, second);
   }
-=======
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 
   factory NoteToFutureSelf.fromMap(Map data) {
     return NoteToFutureSelf(

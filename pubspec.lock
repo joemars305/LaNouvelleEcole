@@ -22,16 +22,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.4.0"
-<<<<<<< HEAD
-=======
-  audio_recorder:
-    dependency: "direct main"
-    description:
-      name: audio_recorder
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.0.1"
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
   audioplayers:
     dependency: "direct main"
     description:
@@ -103,11 +93,7 @@ packages:
     source: hosted
     version: "3.0.9"
   file:
-<<<<<<< HEAD
     dependency: "direct main"
-=======
-    dependency: transitive
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
     description:
       name: file
       url: "https://pub.dartlang.org"
@@ -167,7 +153,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.7.4"
-<<<<<<< HEAD
   flutter_sound:
     dependency: "direct main"
     description:
@@ -175,8 +160,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.1"
-=======
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
   flutter_test:
     dependency: "direct dev"
     description: flutter

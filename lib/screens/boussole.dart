@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 /*import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-=======
-import 'package:flutter/material.dart';
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 import 'package:quizapp/parts/parts.dart';
 import 'package:quizapp/services/services.dart';
 import '../parts/consts.dart';
@@ -586,12 +582,8 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
     if (choice == NO_FUTURE_CHOICE) {
       yaRienAFaire(userReport);
     } else if (choice.choiceValue == UNE_SEULE_FOIS) {
-<<<<<<< HEAD
       createNotificationOnce(noteToFutureSelf, userReport);
       
-=======
-      saveNoteToFutureSelf(noteToFutureSelf, userReport);
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
     } else if (choice.choiceValue == PLUSIEURS_FOIS) {
       faisChosePlusieursFois(noteToFutureSelf, userReport);
     } else {
@@ -599,7 +591,6 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
     }
   }
 
-<<<<<<< HEAD
   
   void createNotificationOnce(
       NoteToFutureSelf noteToFutureSelf, Report userReport) {
@@ -621,17 +612,6 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
 
     /// retour a l'écran calendrier
     goToCalendarScreen();
-=======
-  void saveNoteToFutureSelf(
-      NoteToFutureSelf noteToFutureSelf, Report userReport) {
-    noteToFutureSelf.combienDeFois = UNE_SEULE_FOIS;
-
-    userReport.notesToFutureSelf.add(noteToFutureSelf);
-
-    userReport.save();
-
-    displaySnackbar(_scaffoldKey, "Chose créee avec succès", 3000);
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
   }
 
   void faisChosePlusieursFois(
@@ -820,7 +800,4 @@ class _BoussoleState extends State<Boussole> with TickerProviderStateMixin {
         _scaffoldKey, "Il faut écrire un nombre entier supérieur ou égal à 1", 2500);
   }
 }
-<<<<<<< HEAD
 */
-=======
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6

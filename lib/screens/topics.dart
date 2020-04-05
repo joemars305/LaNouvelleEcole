@@ -1,14 +1,6 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
 import 'package:quizapp/parts/parts.dart';
 import 'package:quizapp/services/services.dart';
-=======
-import 'package:quizapp/parts/consts.dart';
-import 'package:quizapp/parts/toolbox.dart';
-import 'package:quizapp/shared/bottom_nav.dart';
-import 'package:quizapp/shared/lesson_item.dart';
-import '../services/services.dart';
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 
 class TopicsScreen extends StatefulWidget {
   @override

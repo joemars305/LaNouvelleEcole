@@ -1,6 +1,5 @@
 import 'dart:io';
 
-<<<<<<< HEAD
 import 'package:file/local.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -12,17 +11,6 @@ import 'package:quizapp/parts/parts.dart';
 import 'package:quizapp/services/services.dart';
 import 'package:path/path.dart';
 import 'package:file/file.dart';
-=======
-import 'package:audio_recorder/audio_recorder.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:quizapp/parts/parts.dart';
-import 'package:quizapp/services/models.dart';
-import 'package:file/local.dart';
-import 'package:path/path.dart';
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 
 /// String => bool
 ///
@@ -471,7 +459,6 @@ class SoundPlayer {
 class SoundRecorder {
   /// un objet contenant des données relatives
   /// au dernier enregistrement local
-<<<<<<< HEAD
   FlutterSound flutterSound = new FlutterSound();
 
   /// télécommande permettant de démarrer/stopper
@@ -479,9 +466,6 @@ class SoundRecorder {
   var recording = NO_DATA;
 
   String latestRecordingPath;
-=======
-  Recording recording = NO_DATA;
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 
   /// String String Function => void
   ///
@@ -491,29 +475,14 @@ class SoundRecorder {
   Future<void> startRecording(
       String dirPath, String fileName, Function updateState) async {
     try {
-<<<<<<< HEAD
       await _requestMicAndStoragePermissions();
 
       /// le type de fichier audio
       String fileType = "mp3";
-=======
-      /// demande la permission à l'user de pouvoir
-      /// utiliser son microphone, et son stockage
-      await _requestMicAndStoragePermissions();
-
-      // Check permissions before starting
-      bool hasPermissions = await AudioRecorder.hasPermissions;
-
-      print("permissions audiorecorder: $hasPermissions");
-
-      /// le type de fichier audio
-      String fileType = "m4a";
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 
       /// le path complet de fichier audio
       String fullPath = "$dirPath/$fileName.$fileType";
 
-<<<<<<< HEAD
       latestRecordingPath = fullPath;
 
       if (!await isRecording()) {
@@ -527,39 +496,22 @@ class SoundRecorder {
             new DateTime.fromMillisecondsSinceEpoch(e.currentPosition.toInt());
         String txt = DateFormat('mm:ss:SS', 'en_US').format(date);*/
         });
-=======
-      /// si il n'y a pas d'enregistrement en cours
-      if (!await isRecording()) {
-        print("Demarre l'enregistrement audio...");
-
-        /// démarre l'enregistrement audio
-        /// qui est désormais stocké à localPath
-        await AudioRecorder.start(path: fullPath);
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 
         updateState();
       } else {
         print("Pas de permissions, ou enregistrement audio déja en cours..");
       }
     } catch (e) {
-<<<<<<< HEAD
       print(
           "oups: L'erreur suivante à été reçue suite à un enregistrement audio: $e");
-=======
-      print("oups: L'erreur suivante à été reçue suite à une tentnt audio: $e");
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
     }
 
     return NO_DATA;
   }
 
-<<<<<<< HEAD
   Future isRecording() async {
     return flutterSound.isRecording;
   }
-=======
-  Future isRecording() async => (await AudioRecorder.isRecording);
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 
   _requestMicAndStoragePermissions() async {
     await PermissionHandler().requestPermissions([
@@ -578,7 +530,6 @@ class SoundRecorder {
       /// si nous somme en train d'enregistrer
       /// un message audio..
       if (await isRecording()) {
-<<<<<<< HEAD
         String result = await flutterSound.stopRecorder();
 
         print('stopRecorder: $result');
@@ -591,16 +542,6 @@ class SoundRecorder {
         updateState();
 
         return latestRecordingPath;
-=======
-        /// arrete l'enregistrement audio
-        recording = await AudioRecorder.stop();
-
-        print("Adresse de l'enregistrement audio: ${recording.path}");
-
-        updateState();
-
-        return recording.path;
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
       } else {
         print("Il n'y a aucun enregistrement à arrêter");
         return NO_DATA;
@@ -615,12 +556,9 @@ class SoundRecorder {
   /// .. => ..
   ///
   ///
-<<<<<<< HEAD
   void dispose() {
     flutterSound.stopRecorder();
   }
-=======
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
 }
 
 /// nous permet de prendre
@@ -750,7 +688,6 @@ class FileManager {
 
 }
 
-<<<<<<< HEAD
 /*
 /// permet de créer des notifications
 class Notifier {
@@ -806,6 +743,3 @@ class Notifier {
   ///
   ///
 }*/
-=======
-
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6

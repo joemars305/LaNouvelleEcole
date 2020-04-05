@@ -12,17 +12,10 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-<<<<<<< HEAD
   
   
   @override
   Widget build(BuildContext context) {
-=======
-  @override
-  Widget build(BuildContext context) {
-    
-
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
     /* La librairie Provider nous permet d'avoir accès 
     au données de l'user partout dans notre application,
     grâce au MultiProvider, wrapped autour de MaterialApp.
@@ -38,10 +31,7 @@ class MyApp extends StatelessWidget {
           value: AuthService().user,
           catchError: (_, __) => null,
         ),
-<<<<<<< HEAD
         
-=======
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -61,13 +51,7 @@ class MyApp extends StatelessWidget {
           '/favorites': (context) => FavoritesScreen(),
           '/create_fetus_lesson': (context) => CreateFetusPage(),
           '/step_creation': (context) => StepCreation(),
-<<<<<<< HEAD
           '/lesson_viewer': (context) => LessonViewer(),
-=======
-          '/pick_video': (context) => PickPhotoVideo(),
-          '/lesson_viewer': (context) => LessonViewer(),
-          '/boussole': (context) => Boussole(),
->>>>>>> 5d496fa5b0587a530e949ddff2b608dd8a7c0cb6
         },
 
         // Les différents styles dispos
